@@ -69,7 +69,21 @@ public class SettingsService : ISettingsService
             new YpServerSettings
             {
                 Name = "SP",
-                Url = "http://yp.pcgw.pgw.jp/",
+                Url = "http://bayonet.ddo.jp/sp/index.txt",
+                Host = "",
+                Enabled = true
+            },
+            new YpServerSettings
+            {
+                Name = "p@YP",
+                Url = "https://p-at.net/index.txt",
+                Host = "",
+                Enabled = true
+            },
+            new YpServerSettings
+            {
+                Name = "0yp",
+                Url = "https://yayaue.me/yp/index.txt",
                 Host = "",
                 Enabled = true
             }

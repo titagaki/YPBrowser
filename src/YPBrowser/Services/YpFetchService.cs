@@ -60,9 +60,8 @@ public class YpFetchService : IYpFetchService
 
     private static string BuildIndexUrl(YpServerItem server)
     {
-        var baseUrl = server.Url.TrimEnd('/') + "/";
         var query = string.IsNullOrEmpty(server.Host) ? "" : $"?host={Uri.EscapeDataString(server.Host)}";
-        return $"{baseUrl}index.txt{query}";
+        return $"{server.Url}{query}";
     }
 
     private List<ChannelItem> ParseLines(string text, YpServerItem server)
