@@ -1,11 +1,11 @@
 # YPBrowser
 
-PeerCast Yellow Pages ブラウザ。Delphi製 `pcypLite` を C# + WinUI 3 で再実装したもの。
+PeerCast Yellow Pages ブラウザ。Delphi製 `pcypLite` を C# + WPF で再実装したもの。
 
 ## プロジェクト構造
 
 ```
-src/YPBrowser/          # メインアプリ (WinUI 3, net9.0-windows10.0.19041.0)
+src/YPBrowser/          # メインアプリ (WPF, net9.0-windows10.0.19041.0)
 tests/YPBrowser.Tests/  # xUnit テスト (net9.0)
 _ref/pcypLite/          # 参照元 Delphi ソース (gitignore済み)
 ```
@@ -51,4 +51,4 @@ YP データ形式（19フィールド仕様・パース・フィルタリング
 
 ## 注意事項
 
-- `[ObservableProperty]` フィールドに MVVMTK0045 警告が多数出るが、アンパッケージドWinUI 3では問題なし
+- `[ObservableProperty]` フィールドに MVVMTK0045 警告が多数出るが、WPF では問題なし

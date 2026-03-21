@@ -15,9 +15,6 @@
 
 ## よくある疑問への答え
 
-**Q. WinUI 3 のはずなのに WPF のコードがある？**
-→ [architecture.md](architecture.md) の冒頭参照。実装は WPF (`<UseWPF>true`)。
-
 **Q. `FavoriteSettings` と `FavoriteItem` は何が違う？**
 → [concepts.md](concepts.md#favoritesettings-vs-favoriteitem) 参照。
 

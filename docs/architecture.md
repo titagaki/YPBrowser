@@ -21,9 +21,6 @@ Helpers/        ← 変換・ユーティリティ
 Abstractions/   ← Service Interface 定義
 ```
 
-> **注意**: `CLAUDE.md` には "WinUI 3" と記述されているが、実際は WPF (`<UseWPF>true</UseWPF>`)。
-> 初期の計画が変わった経緯があるため注意。
-
 ## WPF 実装上の注意
 
 - **XAML のルート要素は `<Window>`**: `WindowEx` は C# 側のクラス継承でのみ使い、XAML では `<Window>` を使う。`<WindowEx>` をルートにすると XAML デザイナーが壊れる。
