@@ -27,8 +27,7 @@ public class FavoriteMatchTests
     public void RegexMatch_ValidPattern_Matches()
     {
         var ch = MakeChannel("Stream123");
-        var rx = new System.Text.RegularExpressions.Regex("Stream\\d+", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        Assert.True(rx.IsMatch(ch.ChannelName));
+        Assert.Matches("(?i)Stream\\d+", ch.ChannelName);
     }
 
     [Fact]

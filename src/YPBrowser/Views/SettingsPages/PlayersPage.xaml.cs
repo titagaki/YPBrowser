@@ -1,12 +1,11 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Windows.Storage.Pickers;
-using WinRT.Interop;
+using Microsoft.Win32;
+using System.Windows;
+using System.Windows.Controls;
 using YPBrowser.ViewModels;
 
 namespace YPBrowser.Views.SettingsPages;
 
-public sealed partial class PlayersPage : Page
+public partial class PlayersPage : UserControl
 {
     public SettingsViewModel ViewModel { get; }
     private bool _loading;
@@ -14,6 +13,7 @@ public sealed partial class PlayersPage : Page
     public PlayersPage(SettingsViewModel viewModel)
     {
         ViewModel = viewModel;
+        DataContext = viewModel;
         InitializeComponent();
     }
 
@@ -52,22 +52,20 @@ public sealed partial class PlayersPage : Page
             ViewModel.SelectedPlayer.IsDefault = PlayerDefaultCheck.IsChecked ?? false;
     }
 
-    private async void BrowseExe_Click(object sender, RoutedEventArgs e)
+    private void BrowseExe_Click(object sender, RoutedEventArgs e)
     {
         if (ViewModel.SelectedPlayer == null) return;
 
-        var picker = new FileOpenPicker();
-        picker.FileTypeFilter.Add(".exe");
-        picker.SuggestedStartLocation = PickerLocationId.ComputerFolder;
-
-        var hwnd = WindowNative.GetWindowHandle(App.MainWindow!);
-        InitializeWithWindow.Initialize(picker, hwnd);
-
-        var file = await picker.PickSingleFileAsync();
-        if (file != null)
+        var dialog = new OpenFileDialog
         {
-            ViewModel.SelectedPlayer.ExecutablePath = file.Path;
-            PlayerExeBox.Text = file.Path;
+            Filter = "実行ファイル (*.exe)|*.exe|すべてのファイル (*.*)|*.*",
+            Title = "プレイヤーの実行ファイルを選択"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            ViewModel.SelectedPlayer.ExecutablePath = dialog.FileName;
+            PlayerExeBox.Text = dialog.FileName;
         }
     }
 }

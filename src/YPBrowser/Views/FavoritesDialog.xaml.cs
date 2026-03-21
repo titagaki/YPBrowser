@@ -1,13 +1,11 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using WinUIEx;
+using System.Windows;
 using YPBrowser.Models;
 using YPBrowser.Services;
 using YPBrowser.ViewModels;
 
 namespace YPBrowser.Views;
 
-public sealed partial class FavoritesDialog : Window
+public partial class FavoritesDialog : Window
 {
     public FavoritesViewModel ViewModel { get; }
     private readonly SettingsService _settings;
@@ -16,9 +14,8 @@ public sealed partial class FavoritesDialog : Window
     {
         ViewModel = viewModel;
         _settings = settings;
+        DataContext = viewModel;
         InitializeComponent();
-        this.SetWindowSize(680, 480);
-        this.CenterOnScreen();
     }
 
     private void Target_Click(object sender, RoutedEventArgs e)
@@ -36,7 +33,6 @@ public sealed partial class FavoritesDialog : Window
         if (TargetTrackTitle.IsChecked == true) fields |= FavoriteTargetFields.TrackTitle;
         if (TargetTrackArtist.IsChecked == true) fields |= FavoriteTargetFields.TrackArtist;
 
-        // Store as list of field names in settings
         ViewModel.SelectedFavorite.TargetFields = fields.ToString()
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(s => s != "None")

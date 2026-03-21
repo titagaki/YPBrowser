@@ -1,9 +1,13 @@
-using Microsoft.UI.Xaml.Controls;
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Navigation;
 using YPBrowser.Models;
 
 namespace YPBrowser.Views.Controls;
 
-public sealed partial class ChannelDetailPanel : UserControl
+public partial class ChannelDetailPanel : UserControl
 {
     public ChannelDetailPanel()
     {
@@ -22,7 +26,7 @@ public sealed partial class ChannelDetailPanel : UserControl
             BitrateText.Text = "";
             TrackText.Text = "";
             YpText.Text = "";
-            ContactLink.Content = "";
+            ContactLink.Inlines.Clear();
             ContactLink.NavigateUri = null;
             return;
         }
@@ -36,16 +40,22 @@ public sealed partial class ChannelDetailPanel : UserControl
         TrackText.Text = ch.TrackInfo;
         YpText.Text = ch.YpName;
 
-        if (!string.IsNullOrEmpty(ch.ContactUrl))
+        ContactLink.Inlines.Clear();
+        if (!string.IsNullOrEmpty(ch.ContactUrl) && Uri.TryCreate(ch.ContactUrl, UriKind.Absolute, out var uri))
         {
-            ContactLink.Content = ch.ContactUrl;
-            if (Uri.TryCreate(ch.ContactUrl, UriKind.Absolute, out var uri))
-                ContactLink.NavigateUri = uri;
+            ContactLink.Inlines.Add(new Run(ch.ContactUrl));
+            ContactLink.NavigateUri = uri;
         }
-        else
+        else if (!string.IsNullOrEmpty(ch.ContactUrl))
         {
-            ContactLink.Content = "";
-            ContactLink.NavigateUri = null;
+            ContactLink.Inlines.Add(new Run(ch.ContactUrl));
         }
+    }
+
+    private void ContactLink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        try { Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); }
+        catch { }
+        e.Handled = true;
     }
 }

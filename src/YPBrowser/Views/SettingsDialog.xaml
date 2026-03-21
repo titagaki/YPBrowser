@@ -2,40 +2,45 @@
     x:Class="YPBrowser.Views.SettingsDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:settings="using:YPBrowser.Settings"
-    Title="設定">
+    Title="設定"
+    Width="700" Height="520"
+    WindowStartupLocation="CenterOwner"
+    ResizeMode="NoResize">
 
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-        <!-- Navigation -->
-        <NavigationView Grid.Column="0" Grid.ColumnSpan="2"
-                        PaneDisplayMode="Left"
-                        IsBackButtonVisible="Collapsed"
-                        IsSettingsVisible="False"
-                        SelectionChanged="NavView_SelectionChanged"
-                        x:Name="NavView">
-            <NavigationView.MenuItems>
-                <NavigationViewItem Content="Yellow Pages" Tag="YP" Icon="Globe" />
-                <NavigationViewItem Content="プレイヤー" Tag="Players" Icon="Play" />
-                <NavigationViewItem Content="表示" Tag="Display" Icon="Font" />
-                <NavigationViewItem Content="ネットワーク" Tag="Network" Icon="Remote" />
-                <NavigationViewItem Content="通知" Tag="Notifications" Icon="Important" />
-                <NavigationViewItem Content="動作" Tag="Behavior" Icon="Setting" />
-            </NavigationView.MenuItems>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="180" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
 
-            <Frame x:Name="ContentFrame" Margin="16" />
-        </NavigationView>
+            <!-- Navigation list -->
+            <ListBox x:Name="NavList"
+                     Grid.Column="0"
+                     SelectionChanged="NavList_SelectionChanged"
+                     BorderThickness="0,0,1,0">
+                <ListBoxItem Content="Yellow Pages" Tag="YP" />
+                <ListBoxItem Content="プレイヤー" Tag="Players" />
+                <ListBoxItem Content="表示" Tag="Display" />
+                <ListBoxItem Content="ネットワーク" Tag="Network" />
+                <ListBoxItem Content="通知" Tag="Notifications" />
+                <ListBoxItem Content="動作" Tag="Behavior" />
+            </ListBox>
+
+            <!-- Page content -->
+            <ContentControl x:Name="ContentFrame" Grid.Column="1" Margin="16" />
+        </Grid>
 
         <!-- Footer buttons -->
-        <StackPanel Grid.Column="0" Grid.ColumnSpan="2"
-                    Orientation="Horizontal" HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom" Margin="16" Spacing="8">
-            <Button Content="OK" Style="{StaticResource AccentButtonStyle}" Click="OK_Click" />
-            <Button Content="キャンセル" Click="Cancel_Click" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="16,8">
+            <Button Content="OK" Click="OK_Click" Width="80" Margin="0,0,8,0" IsDefault="True" />
+            <Button Content="キャンセル" Click="Cancel_Click" Width="80" IsCancel="True" />
         </StackPanel>
     </Grid>
 </Window>

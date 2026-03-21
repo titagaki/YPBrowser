@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml;
+using System.Windows;
 using YPBrowser.Services;
 using YPBrowser.ViewModels;
 using YPBrowser.Views;
@@ -10,18 +10,18 @@ namespace YPBrowser;
 public partial class App : Application
 {
     public static IServiceProvider Services { get; private set; } = null!;
-    public static MainWindow? MainWindow { get; private set; }
+    public static new MainWindow? MainWindow { get; private set; }
 
     public App()
     {
-        InitializeComponent();
         Services = ConfigureServices();
     }
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override void OnStartup(StartupEventArgs e)
     {
+        base.OnStartup(e);
         MainWindow = Services.GetRequiredService<MainWindow>();
-        MainWindow.Activate();
+        MainWindow.Show();
     }
 
     private static IServiceProvider ConfigureServices()

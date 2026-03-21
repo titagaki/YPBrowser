@@ -1,7 +1,8 @@
 using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.UI.Dispatching;
 using YPBrowser.Models;
 using YPBrowser.Services;
 using YPBrowser.Settings;
@@ -16,7 +17,7 @@ public partial class MainViewModel : ObservableObject
     private readonly NotificationService _notificationService;
     private readonly PlayerLaunchService _playerService;
     private readonly SettingsService _settings;
-    private DispatcherQueue? _dispatcher;
+    private Dispatcher? _dispatcher;
 
     // Full merged channel list (all YPs, including log)
     private readonly List<ChannelItem> _allChannels = [];
@@ -54,14 +55,13 @@ public partial class MainViewModel : ObservableObject
         _refreshService.RefreshCompleted += OnRefreshCompleted;
     }
 
-    public void Initialize(DispatcherQueue dispatcher)
+    public void Initialize(Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
         _refreshService.Start();
 
         // Countdown timer
-        var timer = dispatcher.CreateTimer();
-        timer.Interval = TimeSpan.FromSeconds(1);
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         timer.Tick += (_, _) =>
         {
             var remaining = _refreshService.NextRefreshAt - DateTime.Now;
@@ -74,12 +74,12 @@ public partial class MainViewModel : ObservableObject
 
     private void OnRefreshStarted(object? sender, EventArgs e)
     {
-        _dispatcher?.TryEnqueue(() => IsRefreshing = true);
+        _dispatcher?.BeginInvoke(() => IsRefreshing = true);
     }
 
     private void OnRefreshCompleted(object? sender, RefreshCompletedEventArgs e)
     {
-        _dispatcher?.TryEnqueue(() =>
+        _dispatcher?.BeginInvoke(() =>
         {
             var newList = e.Channels.ToList();
             var favorites = GetFavoriteItems();
@@ -215,9 +215,7 @@ public partial class MainViewModel : ObservableObject
     private void CopyUrl(ChannelItem? channel)
     {
         if (channel == null) return;
-        var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
-        dp.SetText(channel.StreamUrl);
-        Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+        Clipboard.SetText(channel.StreamUrl);
     }
 }
 

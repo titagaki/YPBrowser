@@ -1,6 +1,4 @@
-using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Dispatching;
 using YPBrowser.Models;
 
 namespace YPBrowser.Services;
@@ -21,10 +19,9 @@ public class NotificationService : IDisposable
         _logger = logger;
     }
 
-    public void Initialize(DispatcherQueue dispatcher)
+    public void Initialize()
     {
         _logger.LogInformation("Notification service initialized");
-        // Tray icon can be added via P/Invoke in a future iteration
     }
 
     public void SetWindowHandle(nint hwnd)

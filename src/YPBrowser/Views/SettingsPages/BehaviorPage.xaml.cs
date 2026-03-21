@@ -1,11 +1,13 @@
-using Microsoft.UI.Xaml.Controls;
+using System.Windows;
+using System.Windows.Controls;
 using YPBrowser.Services;
 
 namespace YPBrowser.Views.SettingsPages;
 
-public sealed partial class BehaviorPage : Page
+public partial class BehaviorPage : UserControl
 {
     private readonly SettingsService _settings;
+    private bool _loading;
 
     public BehaviorPage(SettingsService settings)
     {
@@ -16,26 +18,39 @@ public sealed partial class BehaviorPage : Page
 
     private void Load()
     {
+        _loading = true;
         var b = _settings.Current.Behavior;
-        IntervalBox.Value = b.RefreshIntervalSeconds;
-        MinimizeToTraySwitch.IsOn = b.MinimizeToTray;
-        StartMinimizedSwitch.IsOn = b.StartMinimized;
-        NotifyFavSwitch.IsOn = b.NotifyOnFavorite;
-        DoubleClickSwitch.IsOn = b.OpenOnDoubleClick;
+        IntervalBox.Text = b.RefreshIntervalSeconds.ToString();
+        MinimizeToTrayCheck.IsChecked = b.MinimizeToTray;
+        StartMinimizedCheck.IsChecked = b.StartMinimized;
+        NotifyFavCheck.IsChecked = b.NotifyOnFavorite;
+        DoubleClickCheck.IsChecked = b.OpenOnDoubleClick;
+        _loading = false;
     }
 
-    private void IntervalBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
-        => _settings.Current.Behavior.RefreshIntervalSeconds = (int)args.NewValue;
+    private void IntervalBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!_loading && int.TryParse(IntervalBox.Text, out var v))
+            _settings.Current.Behavior.RefreshIntervalSeconds = v;
+    }
 
-    private void MinimizeToTray_Toggled(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        => _settings.Current.Behavior.MinimizeToTray = MinimizeToTraySwitch.IsOn;
+    private void MinimizeToTray_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_loading) _settings.Current.Behavior.MinimizeToTray = MinimizeToTrayCheck.IsChecked == true;
+    }
 
-    private void StartMinimized_Toggled(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        => _settings.Current.Behavior.StartMinimized = StartMinimizedSwitch.IsOn;
+    private void StartMinimized_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_loading) _settings.Current.Behavior.StartMinimized = StartMinimizedCheck.IsChecked == true;
+    }
 
-    private void NotifyFav_Toggled(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        => _settings.Current.Behavior.NotifyOnFavorite = NotifyFavSwitch.IsOn;
+    private void NotifyFav_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_loading) _settings.Current.Behavior.NotifyOnFavorite = NotifyFavCheck.IsChecked == true;
+    }
 
-    private void DoubleClick_Toggled(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        => _settings.Current.Behavior.OpenOnDoubleClick = DoubleClickSwitch.IsOn;
+    private void DoubleClick_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_loading) _settings.Current.Behavior.OpenOnDoubleClick = DoubleClickCheck.IsChecked == true;
+    }
 }

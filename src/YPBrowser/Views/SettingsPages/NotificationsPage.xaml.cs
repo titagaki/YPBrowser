@@ -1,11 +1,13 @@
-using Microsoft.UI.Xaml.Controls;
+using System.Windows;
+using System.Windows.Controls;
 using YPBrowser.Services;
 
 namespace YPBrowser.Views.SettingsPages;
 
-public sealed partial class NotificationsPage : Page
+public partial class NotificationsPage : UserControl
 {
     private readonly SettingsService _settings;
+    private bool _loading;
 
     public NotificationsPage(SettingsService settings)
     {
@@ -16,14 +18,21 @@ public sealed partial class NotificationsPage : Page
 
     private void Load()
     {
+        _loading = true;
         var n = _settings.Current.Notifications;
-        EnabledSwitch.IsOn = n.Enabled;
-        TimeoutBox.Value = n.BalloonTimeoutSeconds;
+        EnabledCheck.IsChecked = n.Enabled;
+        TimeoutBox.Text = n.BalloonTimeoutSeconds.ToString();
+        _loading = false;
     }
 
-    private void EnabledSwitch_Toggled(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        => _settings.Current.Notifications.Enabled = EnabledSwitch.IsOn;
+    private void EnabledCheck_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_loading) _settings.Current.Notifications.Enabled = EnabledCheck.IsChecked == true;
+    }
 
-    private void TimeoutBox_ValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
-        => _settings.Current.Notifications.BalloonTimeoutSeconds = (int)args.NewValue;
+    private void TimeoutBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!_loading && int.TryParse(TimeoutBox.Text, out var v))
+            _settings.Current.Notifications.BalloonTimeoutSeconds = v;
+    }
 }

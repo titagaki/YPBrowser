@@ -1,13 +1,12 @@
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using WinUIEx;
+using System.Windows;
+using System.Windows.Controls;
 using YPBrowser.Services;
 using YPBrowser.ViewModels;
 using YPBrowser.Views.SettingsPages;
 
 namespace YPBrowser.Views;
 
-public sealed partial class SettingsDialog : Window
+public partial class SettingsDialog : Window
 {
     private readonly SettingsViewModel _viewModel;
     private readonly SettingsService _settings;
@@ -17,16 +16,14 @@ public sealed partial class SettingsDialog : Window
         _viewModel = viewModel;
         _settings = settings;
         InitializeComponent();
-        this.SetWindowSize(700, 520);
-        this.CenterOnScreen();
 
         // Navigate to first item
-        NavView.SelectedItem = NavView.MenuItems[0];
+        NavList.SelectedIndex = 0;
     }
 
-    private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    private void NavList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        var tag = (args.SelectedItem as NavigationViewItem)?.Tag?.ToString();
+        var tag = (NavList.SelectedItem as ListBoxItem)?.Tag?.ToString();
         ContentFrame.Content = tag switch
         {
             "YP" => new YpServersPage(_viewModel),

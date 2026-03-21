@@ -1,10 +1,10 @@
-<Page
+<UserControl
     x:Class="YPBrowser.Views.SettingsPages.PlayersPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:settings="using:YPBrowser.Settings">
+    xmlns:settings="clr-namespace:YPBrowser.Settings">
 
-    <Grid RowSpacing="8">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="160" />
@@ -12,37 +12,37 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="外部プレイヤー" Style="{StaticResource SubtitleTextBlockStyle}" />
+        <TextBlock Grid.Row="0" Text="外部プレイヤー" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
 
-        <ListView Grid.Row="1" x:Name="PlayerListView"
-                  ItemsSource="{x:Bind ViewModel.Players}"
-                  SelectedItem="{x:Bind ViewModel.SelectedPlayer, Mode=TwoWay}"
-                  BorderThickness="1" BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-                  SelectionChanged="PlayerList_SelectionChanged">
-            <ListView.ItemTemplate>
-                <DataTemplate x:DataType="settings:PlayerSettings">
-                    <Grid ColumnSpacing="8">
+        <ListBox Grid.Row="1" x:Name="PlayerListView"
+                 ItemsSource="{Binding Players}"
+                 SelectedItem="{Binding SelectedPlayer, Mode=TwoWay}"
+                 BorderThickness="1"
+                 SelectionChanged="PlayerList_SelectionChanged">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{x:Bind Name}" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="1" Text="{x:Bind ExecutablePath}" Opacity="0.6" FontSize="11" VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding ExecutablePath}" Opacity="0.6" FontSize="11"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                     </Grid>
                 </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+            </ListBox.ItemTemplate>
+        </ListBox>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="4">
-            <Button Content="追加" Command="{x:Bind ViewModel.AddPlayerCommand}" />
-            <Button Content="削除" Command="{x:Bind ViewModel.RemovePlayerCommand}" />
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,4">
+            <Button Content="追加" Command="{Binding AddPlayerCommand}" Margin="0,0,4,0" />
+            <Button Content="削除" Command="{Binding RemovePlayerCommand}" />
         </StackPanel>
 
         <ScrollViewer Grid.Row="3">
-            <StackPanel Spacing="8">
-                <TextBlock Text="編集" FontWeight="SemiBold" />
-                <Grid ColumnSpacing="8" RowSpacing="8">
+            <StackPanel>
+                <TextBlock Text="編集" FontWeight="SemiBold" Margin="0,0,0,8" />
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="80" />
                         <ColumnDefinition Width="*" />
@@ -57,27 +57,24 @@
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="名前" VerticalAlignment="Center"/>
                     <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="PlayerNameBox"
-                             PlaceholderText="VLC, MPC-HC, ..."
-                             TextChanged="PlayerNameBox_TextChanged"/>
+                             TextChanged="PlayerNameBox_TextChanged" Margin="0,0,0,4"/>
 
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="実行ファイル" VerticalAlignment="Center"/>
                     <TextBox Grid.Row="1" Grid.Column="1" x:Name="PlayerExeBox"
-                             PlaceholderText="C:\Program Files\VLC\vlc.exe"
-                             TextChanged="PlayerExeBox_TextChanged"/>
+                             TextChanged="PlayerExeBox_TextChanged" Margin="0,0,4,4"/>
                     <Button Grid.Row="1" Grid.Column="2" Content="参照" Click="BrowseExe_Click" />
 
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="引数" VerticalAlignment="Center"/>
                     <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="PlayerArgsBox"
-                             PlaceholderText='"{url}"'
-                             TextChanged="PlayerArgsBox_TextChanged"/>
+                             TextChanged="PlayerArgsBox_TextChanged" Margin="0,0,0,4"/>
 
                     <TextBlock Grid.Row="3" Grid.Column="0" Text="デフォルト" VerticalAlignment="Center"/>
                     <CheckBox Grid.Row="3" Grid.Column="1" x:Name="PlayerDefaultCheck"
                               Content="このプレイヤーをデフォルトにする"
                               Click="PlayerDefaultCheck_Click"/>
                 </Grid>
-                <TextBlock Text="{}{url} に配信URLが代入されます。" FontSize="11" Opacity="0.6" />
+                <TextBlock Text="{}{url} に配信URLが代入されます。" FontSize="11" Opacity="0.6" Margin="0,8,0,0" />
             </StackPanel>
         </ScrollViewer>
     </Grid>
-</Page>
+</UserControl>

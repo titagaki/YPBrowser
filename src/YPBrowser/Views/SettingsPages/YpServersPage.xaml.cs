@@ -1,10 +1,10 @@
-using Microsoft.UI.Xaml.Controls;
-using YPBrowser.Settings;
+using System.Windows;
+using System.Windows.Controls;
 using YPBrowser.ViewModels;
 
 namespace YPBrowser.Views.SettingsPages;
 
-public sealed partial class YpServersPage : Page
+public partial class YpServersPage : UserControl
 {
     public SettingsViewModel ViewModel { get; }
     private bool _loading;
@@ -12,6 +12,7 @@ public sealed partial class YpServersPage : Page
     public YpServersPage(SettingsViewModel viewModel)
     {
         ViewModel = viewModel;
+        DataContext = viewModel;
         InitializeComponent();
         ServerList.SelectionChanged += ServerList_SelectionChanged;
     }
