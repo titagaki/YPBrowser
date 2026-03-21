@@ -24,8 +24,7 @@
 
         <!-- Toolbar -->
         <ToolBar Grid.Row="0">
-            <Button Content="更新" Command="{Binding RefreshCommand}"
-                    IsEnabled="{Binding IsRefreshing}" />
+            <Button Content="更新" Command="{Binding RefreshCommand}" />
             <Button Content="お気に入り" Click="OpenFavorites_Click" />
             <Separator />
             <Button Content="設定" Click="OpenSettings_Click" />
