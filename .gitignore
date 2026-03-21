@@ -1,0 +1,42 @@
+### 参照ソース ###
+_ref/
+
+### .NET / MSBuild ビルド成果物 ###
+bin/
+obj/
+*.binlog
+*.log
+
+### NuGet ###
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+
+### Visual Studio / Rider ###
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+### VSCode ###
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+### Claude Code (ローカル設定はコミットしない) ###
+.claude/settings.local.json
+
+### Windows App SDK / MSIX ###
+*.msix
+*.msixbundle
+AppPackages/
+BundleArtifacts/
+
+### OS ###
+Thumbs.db
+desktop.ini
+.DS_Store

@@ -1,0 +1,29 @@
+<Page
+    x:Class="YPBrowser.Views.SettingsPages.BehaviorPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Spacing="12" Padding="4">
+            <TextBlock Text="動作設定" Style="{StaticResource SubtitleTextBlockStyle}" />
+
+            <StackPanel Spacing="4">
+                <TextBlock Text="自動更新間隔（秒）" />
+                <NumberBox x:Name="IntervalBox" Minimum="30" Maximum="3600" SmallChange="30"
+                           ValueChanged="IntervalBox_ValueChanged"/>
+            </StackPanel>
+
+            <ToggleSwitch x:Name="MinimizeToTraySwitch" Header="最小化でトレイに格納"
+                          Toggled="MinimizeToTray_Toggled"/>
+
+            <ToggleSwitch x:Name="StartMinimizedSwitch" Header="起動時に最小化"
+                          Toggled="StartMinimized_Toggled"/>
+
+            <ToggleSwitch x:Name="NotifyFavSwitch" Header="お気に入りチャンネルを通知"
+                          Toggled="NotifyFav_Toggled"/>
+
+            <ToggleSwitch x:Name="DoubleClickSwitch" Header="ダブルクリックで再生"
+                          Toggled="DoubleClick_Toggled"/>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

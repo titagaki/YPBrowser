@@ -1,0 +1,55 @@
+<UserControl
+    x:Class="YPBrowser.Views.Controls.ChannelDetailPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:YPBrowser.Models">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,4">
+        <StackPanel x:Name="DetailPanel" Spacing="4">
+            <TextBlock x:Name="ChannelNameText"
+                       FontSize="15" FontWeight="SemiBold"
+                       TextWrapping="Wrap" />
+            <Grid x:Name="InfoGrid" ColumnSpacing="8" RowSpacing="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="80" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="ジャンル" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                <TextBlock x:Name="GenreText" Grid.Row="0" Grid.Column="1" TextWrapping="Wrap" FontSize="12"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="説明" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                <TextBlock x:Name="DescText" Grid.Row="1" Grid.Column="1" TextWrapping="Wrap" FontSize="12"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="コメント" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                <TextBlock x:Name="CommentText" Grid.Row="2" Grid.Column="1" TextWrapping="Wrap" FontSize="12"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="視聴/リレー" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                <TextBlock x:Name="ListenersText" Grid.Row="3" Grid.Column="1" FontSize="12"/>
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="ビットレート" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                <TextBlock x:Name="BitrateText" Grid.Row="4" Grid.Column="1" FontSize="12"/>
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="トラック" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                <TextBlock x:Name="TrackText" Grid.Row="5" Grid.Column="1" TextWrapping="Wrap" FontSize="12"/>
+
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="YP" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                <TextBlock x:Name="YpText" Grid.Row="6" Grid.Column="1" FontSize="12"/>
+
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="連絡先" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12"/>
+                <HyperlinkButton x:Name="ContactLink" Grid.Row="7" Grid.Column="1"
+                                 Padding="0" FontSize="12" />
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

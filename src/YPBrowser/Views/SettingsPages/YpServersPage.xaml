@@ -1,0 +1,79 @@
+<Page
+    x:Class="YPBrowser.Views.SettingsPages.YpServersPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:settings="using:YPBrowser.Settings">
+
+    <Grid RowSpacing="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="180" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Yellow Pages サーバー" Style="{StaticResource SubtitleTextBlockStyle}" />
+
+        <ListView Grid.Row="1"
+                  x:Name="ServerList"
+                  ItemsSource="{x:Bind ViewModel.YpServers}"
+                  SelectedItem="{x:Bind ViewModel.SelectedYpServer, Mode=TwoWay}"
+                  BorderThickness="1" BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="settings:YpServerSettings">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox Grid.Column="0" IsChecked="{x:Bind Enabled, Mode=TwoWay}" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind Name}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{x:Bind Url}" Opacity="0.6" FontSize="11" VerticalAlignment="Center" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="4">
+            <Button Content="追加" Command="{x:Bind ViewModel.AddYpServerCommand}" />
+            <Button Content="削除" Command="{x:Bind ViewModel.RemoveYpServerCommand}" />
+            <Button Content="↑" Command="{x:Bind ViewModel.MoveYpServerUpCommand}" />
+            <Button Content="↓" Command="{x:Bind ViewModel.MoveYpServerDownCommand}" />
+        </StackPanel>
+
+        <!-- Edit form -->
+        <ScrollViewer Grid.Row="3">
+            <StackPanel Spacing="8" x:Name="EditPanel">
+                <TextBlock Text="編集" FontWeight="SemiBold" />
+                <Grid ColumnSpacing="8" RowSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="名前" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="YpNameBox"
+                             PlaceholderText="表示名"
+                             TextChanged="YpNameBox_TextChanged"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="URL" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="YpUrlBox"
+                             PlaceholderText="http://yp.example.com/"
+                             TextChanged="YpUrlBox_TextChanged"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="ホスト" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="2" Grid.Column="1" x:Name="YpHostBox"
+                             PlaceholderText="省略可 (自動検出)"
+                             TextChanged="YpHostBox_TextChanged"/>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Page>
