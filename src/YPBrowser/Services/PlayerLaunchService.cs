@@ -1,8 +1,6 @@
 using System.Diagnostics;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using YPBrowser.Abstractions;
-using YPBrowser.Helpers;
 using YPBrowser.Models;
 
 namespace YPBrowser.Services;
@@ -20,19 +18,7 @@ public class PlayerLaunchService : IPlayerLaunchService
     {
         try
         {
-            var url = channel.StreamUrl;
-            string args;
-
-            if (player.UsePlaylistFile)
-            {
-                var plsPath = WritePlsFile(channel);
-                args = player.ArgumentTemplate.Replace("{url}", plsPath).Replace("{file}", plsPath);
-            }
-            else
-            {
-                args = player.ArgumentTemplate.Replace("{url}", url);
-            }
-
+            var args = player.ArgumentTemplate.Replace("{url}", channel.StreamUrl);
             _logger.LogInformation("Launching {Player} with args: {Args}", player.Name, args);
             Process.Start(new ProcessStartInfo
             {
@@ -62,11 +48,4 @@ public class PlayerLaunchService : IPlayerLaunchService
         }
     }
 
-    private static string WritePlsFile(ChannelItem channel)
-    {
-        var path = Path.Combine(Path.GetTempPath(), $"ypbrowser_{channel.Id}.pls");
-        var content = PlaylistWriter.BuildPls(channel);
-        File.WriteAllText(path, content, Encoding.UTF8);
-        return path;
-    }
 }

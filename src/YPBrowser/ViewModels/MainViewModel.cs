@@ -185,7 +185,6 @@ public partial class MainViewModel : ObservableObject
             Name = defaultPlayer.Name,
             ExecutablePath = defaultPlayer.ExecutablePath,
             ArgumentTemplate = defaultPlayer.ArgumentTemplate,
-            UsePlaylistFile = defaultPlayer.UsePlaylistFile,
         };
         _playerService.Launch(channel, playerModel);
     }

@@ -44,8 +44,7 @@ public class PlayerSettings
     public string Name { get; set; } = "";
     public string ExecutablePath { get; set; } = "";
     public string ArgumentTemplate { get; set; } = "\"{url}\"";
-    public bool UsePlaylistFile { get; set; } = false;
-    public bool IsDefault { get; set; } = false;
+public bool IsDefault { get; set; } = false;
 }
 
 public class NetworkSettings
