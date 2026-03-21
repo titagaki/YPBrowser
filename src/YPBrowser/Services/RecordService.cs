@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using YPBrowser.Abstractions;
 using YPBrowser.Models;
@@ -21,48 +21,87 @@ public class RecordService : IRecordService
         ["NSV"]  = ".nsv",
     };
 
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<RecordService> _logger;
 
-    public RecordService(ILogger<RecordService> logger)
+    // channelId → CancellationTokenSource for active recordings
+    private readonly ConcurrentDictionary<string, CancellationTokenSource> _active = new();
+
+    public RecordService(IHttpClientFactory httpClientFactory, ILogger<RecordService> logger)
     {
+        _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
 
-    public void Record(ChannelItem channel, DownloaderSettings settings)
+    public void StartRecording(ChannelItem channel, DownloaderSettings settings)
+    {
+        if (_active.ContainsKey(channel.Id))
+        {
+            _logger.LogWarning("Already recording channel {Id}", channel.Id);
+            return;
+        }
+
+        var cts = new CancellationTokenSource();
+        if (!_active.TryAdd(channel.Id, cts))
+        {
+            cts.Dispose();
+            return;
+        }
+
+        var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        var outputDir = ResolveOutputDirectory(settings.OutputDirectory);
+        var filename = BuildFilename(channel, settings.FileNameTemplate, timestamp);
+        var filePath = Path.Combine(outputDir, filename);
+
+        _logger.LogInformation("Recording started: {Channel} → {File}", channel.ChannelName, filePath);
+
+        _ = Task.Run(() => DownloadAsync(channel.StreamUrl, filePath, channel.Id, cts.Token));
+    }
+
+    public void StopRecording(string channelId)
+    {
+        if (_active.TryRemove(channelId, out var cts))
+        {
+            _logger.LogInformation("Recording stopped for channel {Id}", channelId);
+            cts.Cancel();
+            cts.Dispose();
+        }
+    }
+
+    public bool IsRecording(string channelId) => _active.ContainsKey(channelId);
+
+    private async Task DownloadAsync(string url, string filePath, string channelId, CancellationToken ct)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(settings.ExecutablePath))
-            {
-                _logger.LogWarning("No recorder executable configured");
-                return;
-            }
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
 
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var outputDir = ResolveOutputDirectory(settings.OutputDirectory);
-            var filename = BuildFilename(channel, settings.FileNameTemplate, timestamp);
+            var client = _httpClientFactory.CreateClient("RecordService");
 
-            var args = settings.ArgumentTemplate
-                .Replace("{url}",         channel.StreamUrl)
-                .Replace("{outputDir}",   outputDir)
-                .Replace("{channelName}", SanitizeFilename(channel.ChannelName))
-                .Replace("{timestamp}",   timestamp)
-                .Replace("{filename}",    filename);
+            using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            response.EnsureSuccessStatusCode();
 
-            _logger.LogInformation("Starting recording: {Exe} {Args}", settings.ExecutablePath, args);
+            await using var fileStream = new FileStream(
+                filePath, FileMode.Create, FileAccess.Write, FileShare.Read,
+                bufferSize: 81920, useAsync: true);
 
-            Process.Start(new ProcessStartInfo
-            {
-                FileName        = settings.ExecutablePath,
-                Arguments       = args,
-                UseShellExecute = false,
-                CreateNoWindow  = true,
-            });
+            await response.Content.CopyToAsync(fileStream, ct);
+
+            _logger.LogInformation("Recording completed: {File}", filePath);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Recording cancelled: {File}", filePath);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to start recorder for {Channel}", channel.ChannelName);
-            throw;
+            _logger.LogError(ex, "Recording failed for channel {Id}", channelId);
+        }
+        finally
+        {
+            // Clean up CTS if it's still in the dict (not removed by StopRecording)
+            if (_active.TryRemove(channelId, out var cts))
+                cts.Dispose();
         }
     }
 

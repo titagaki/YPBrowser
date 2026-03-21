@@ -95,8 +95,6 @@ public class WindowSettings
 
 public class DownloaderSettings
 {
-    public string ExecutablePath { get; set; } = "";
-    public string ArgumentTemplate { get; set; } = "-i \"{url}\" -c copy \"{outputDir}\\{filename}\"";
     public string OutputDirectory { get; set; } = "";
     public string FileNameTemplate { get; set; } = "{channelName}_{timestamp}";
 }

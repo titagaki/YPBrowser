@@ -42,6 +42,11 @@ public partial class App : Application
             client.Timeout = TimeSpan.FromSeconds(10);
             client.DefaultRequestHeaders.UserAgent.ParseAdd("YPBrowser/1.0");
         });
+        services.AddHttpClient("RecordService", client =>
+        {
+            client.Timeout = Timeout.InfiniteTimeSpan;
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("YPBrowser/1.0");
+        });
 
         // Services (registered against their interfaces)
         services.AddSingleton<ISettingsService, SettingsService>();

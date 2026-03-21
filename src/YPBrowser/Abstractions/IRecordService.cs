@@ -5,5 +5,7 @@ namespace YPBrowser.Abstractions;
 
 public interface IRecordService
 {
-    void Record(ChannelItem channel, DownloaderSettings settings);
+    void StartRecording(ChannelItem channel, DownloaderSettings settings);
+    void StopRecording(string channelId);
+    bool IsRecording(string channelId);
 }

@@ -6,48 +6,39 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="0,0,0,16">
 
-            <!-- Section 1: ダウンロードツール設定 -->
-            <TextBlock Text="ダウンロードツール" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <!-- Section 1: ダウンロード設定 -->
+            <TextBlock Text="ダウンロード設定" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <TextBlock FontSize="11" Opacity="0.6" Margin="0,0,0,8"
+                       Text="HTTPストリームを直接ファイルに保存します。" />
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="120" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="実行ファイル" VerticalAlignment="Center"/>
-                <TextBox   Grid.Row="0" Grid.Column="1" x:Name="ExeBox"
-                           TextChanged="ExeBox_TextChanged" Margin="0,0,4,4"/>
-                <Button    Grid.Row="0" Grid.Column="2" Content="参照" Click="BrowseExe_Click"/>
-
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="保存フォルダ" VerticalAlignment="Center"/>
-                <TextBox   Grid.Row="1" Grid.Column="1" x:Name="OutDirBox"
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="保存フォルダ" VerticalAlignment="Center"/>
+                <TextBox   Grid.Row="0" Grid.Column="1" x:Name="OutDirBox"
                            TextChanged="OutDirBox_TextChanged" Margin="0,0,4,4"/>
-                <Button    Grid.Row="1" Grid.Column="2" Content="参照" Click="BrowseDir_Click"/>
+                <Button    Grid.Row="0" Grid.Column="2" Content="参照" Click="BrowseDir_Click"/>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="引数テンプレート" VerticalAlignment="Center"/>
-                <TextBox   Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="ArgsBox"
-                           TextChanged="ArgsBox_TextChanged" Margin="0,0,0,4"/>
-
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="ファイル名" VerticalAlignment="Center"/>
-                <TextBox   Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" x:Name="FilenameBox"
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="ファイル名" VerticalAlignment="Center"/>
+                <TextBox   Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" x:Name="FilenameBox"
                            TextChanged="FilenameBox_TextChanged" Margin="0,0,0,4"/>
             </Grid>
             <TextBlock FontSize="11" Opacity="0.6" Margin="0,2,0,0"
-                       Text="{}{url} {outputDir} {filename} {channelName} {timestamp} が使用できます。" />
+                       Text="{}{channelName} {timestamp} が使用できます。空欄の場合は Downloads フォルダに保存されます。" />
 
             <Rectangle Height="1" Fill="#DDDDDD" Margin="0,12,0,12" />
 
             <!-- Section 2: 自動ダウンロードルール -->
             <TextBlock Text="自動ダウンロードルール" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
             <TextBlock FontSize="11" Opacity="0.6" Margin="0,0,0,8"
-                       Text="新着チャンネルが条件に一致した場合、自動的に録音/録画を開始します。" />
+                       Text="新着チャンネルが条件に一致した場合、自動的に録音を開始します。" />
 
             <ListBox x:Name="RuleList" Height="160"
                      ItemsSource="{Binding Rules}"

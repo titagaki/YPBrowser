@@ -22,16 +22,9 @@ public partial class AutoDownloadPage : UserControl
     {
         _loading = true;
         var d = ViewModel.Downloader;
-        ExeBox.Text      = d.ExecutablePath;
         OutDirBox.Text   = d.OutputDirectory;
-        ArgsBox.Text     = d.ArgumentTemplate;
         FilenameBox.Text = d.FileNameTemplate;
         _loading = false;
-    }
-
-    private void ExeBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (!_loading) ViewModel.Downloader.ExecutablePath = ExeBox.Text;
     }
 
     private void OutDirBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -39,28 +32,9 @@ public partial class AutoDownloadPage : UserControl
         if (!_loading) ViewModel.Downloader.OutputDirectory = OutDirBox.Text;
     }
 
-    private void ArgsBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (!_loading) ViewModel.Downloader.ArgumentTemplate = ArgsBox.Text;
-    }
-
     private void FilenameBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (!_loading) ViewModel.Downloader.FileNameTemplate = FilenameBox.Text;
-    }
-
-    private void BrowseExe_Click(object sender, RoutedEventArgs e)
-    {
-        var dialog = new OpenFileDialog
-        {
-            Filter = "実行ファイル (*.exe)|*.exe|すべてのファイル (*.*)|*.*",
-            Title  = "録音/録画ツールの実行ファイルを選択"
-        };
-        if (dialog.ShowDialog() == true)
-        {
-            ViewModel.Downloader.ExecutablePath = dialog.FileName;
-            ExeBox.Text = dialog.FileName;
-        }
     }
 
     private void BrowseDir_Click(object sender, RoutedEventArgs e)

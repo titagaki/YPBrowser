@@ -103,13 +103,13 @@ public partial class MainViewModel : ObservableObject
             if (_settings.Current.Behavior.NotifyOnFavorite && newFavs.Count > 0)
                 _notificationService.NotifyNewFavorites(newFavs);
 
-            if (!isFirstFetch && !string.IsNullOrWhiteSpace(_settings.Current.Downloader.ExecutablePath))
+            if (!isFirstFetch)
             {
                 var rules = Helpers.AutoDownloadSettingsMapper.ToRuleItems(_settings.Current.AutoDownloadRules);
                 if (rules.Count > 0)
                 {
                     foreach (var ch in _autoDownloadService.GetChannelsToAutoDownload(newList, rules))
-                        _recordService.Record(ch, _settings.Current.Downloader);
+                        _recordService.StartRecording(ch, _settings.Current.Downloader);
                 }
             }
 
@@ -224,17 +224,22 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void StartRecord(ChannelItem? channel)
+    private void ToggleRecord(ChannelItem? channel)
     {
         if (channel == null) return;
-        var dl = _settings.Current.Downloader;
-        if (string.IsNullOrWhiteSpace(dl.ExecutablePath))
+        if (_recordService.IsRecording(channel.Id))
         {
-            StatusText = "録音ツールが設定されていません。設定 > ダウンロード を確認してください。";
-            return;
+            _recordService.StopRecording(channel.Id);
+            StatusText = $"録音停止: {channel.ChannelName}";
         }
-        _recordService.Record(channel, dl);
+        else
+        {
+            _recordService.StartRecording(channel, _settings.Current.Downloader);
+            StatusText = $"録音開始: {channel.ChannelName}";
+        }
     }
+
+    public bool IsChannelRecording(string channelId) => _recordService.IsRecording(channelId);
 
     [RelayCommand]
     private async Task RemoveFavorite(ChannelItem? channel)

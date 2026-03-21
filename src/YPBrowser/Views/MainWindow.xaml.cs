@@ -116,7 +116,7 @@ public partial class MainWindow : Window
 
     private void StartRecord_Click(object sender, RoutedEventArgs e)
     {
-        ViewModel.StartRecordCommand.Execute(ViewModel.SelectedChannel);
+        ViewModel.ToggleRecordCommand.Execute(ViewModel.SelectedChannel);
     }
 
     private void OpenSettings_Click(object sender, RoutedEventArgs e)
