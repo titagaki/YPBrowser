@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Windows;
+using YPBrowser.Abstractions;
 using YPBrowser.Services;
 using YPBrowser.ViewModels;
 using YPBrowser.Views;
@@ -42,14 +43,15 @@ public partial class App : Application
             client.DefaultRequestHeaders.UserAgent.ParseAdd("YPBrowser/1.0");
         });
 
-        // Services
-        services.AddSingleton<SettingsService>();
-        services.AddSingleton<YpFetchService>();
-        services.AddSingleton<FavoriteMatchService>();
-        services.AddSingleton<ChannelDiffService>();
-        services.AddSingleton<AutoRefreshService>();
-        services.AddSingleton<NotificationService>();
-        services.AddSingleton<PlayerLaunchService>();
+        // Services (registered against their interfaces)
+        services.AddSingleton<ISettingsService, SettingsService>();
+        services.AddSingleton<IYpFetchService>(sp => sp.GetRequiredService<YpFetchService>());
+        services.AddSingleton<IFavoriteMatchService, FavoriteMatchService>();
+        services.AddSingleton<IChannelDiffService, ChannelDiffService>();
+        services.AddSingleton<IChannelFilterService, ChannelFilterService>();
+        services.AddSingleton<IAutoRefreshService, AutoRefreshService>();
+        services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<IPlayerLaunchService, PlayerLaunchService>();
 
         // ViewModels
         services.AddSingleton<MainViewModel>();

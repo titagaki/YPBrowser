@@ -1,6 +1,6 @@
 using System.Windows;
+using YPBrowser.Abstractions;
 using YPBrowser.Models;
-using YPBrowser.Services;
 using YPBrowser.ViewModels;
 
 namespace YPBrowser.Views;
@@ -8,9 +8,9 @@ namespace YPBrowser.Views;
 public partial class FavoritesDialog : Window
 {
     public FavoritesViewModel ViewModel { get; }
-    private readonly SettingsService _settings;
+    private readonly ISettingsService _settings;
 
-    public FavoritesDialog(FavoritesViewModel viewModel, SettingsService settings)
+    public FavoritesDialog(FavoritesViewModel viewModel, ISettingsService settings)
     {
         ViewModel = viewModel;
         _settings = settings;

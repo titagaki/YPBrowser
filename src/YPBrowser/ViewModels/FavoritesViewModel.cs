@@ -1,20 +1,20 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using YPBrowser.Services;
+using YPBrowser.Abstractions;
 using YPBrowser.Settings;
 
 namespace YPBrowser.ViewModels;
 
 public partial class FavoritesViewModel : ObservableObject
 {
-    private readonly SettingsService _settings;
+    private readonly ISettingsService _settings;
 
     public ObservableCollection<FavoriteSettings> Favorites { get; } = [];
 
     [ObservableProperty] private FavoriteSettings? _selectedFavorite;
 
-    public FavoritesViewModel(SettingsService settings)
+    public FavoritesViewModel(ISettingsService settings)
     {
         _settings = settings;
         Load();

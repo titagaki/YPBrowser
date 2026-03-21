@@ -8,19 +8,20 @@
             <TextBlock Text="動作設定" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12" />
 
             <TextBlock Text="自動更新間隔（秒）" Margin="0,0,0,2" />
-            <TextBox x:Name="IntervalBox" Margin="0,0,0,12" TextChanged="IntervalBox_TextChanged"/>
+            <TextBox Margin="0,0,0,12"
+                     Text="{Binding RefreshIntervalSeconds, UpdateSourceTrigger=PropertyChanged}" />
 
-            <CheckBox x:Name="MinimizeToTrayCheck" Content="最小化でトレイに格納"
-                      Margin="0,0,0,8" Click="MinimizeToTray_Click"/>
+            <CheckBox Content="最小化でトレイに格納" Margin="0,0,0,8"
+                      IsChecked="{Binding MinimizeToTray}" />
 
-            <CheckBox x:Name="StartMinimizedCheck" Content="起動時に最小化"
-                      Margin="0,0,0,8" Click="StartMinimized_Click"/>
+            <CheckBox Content="起動時に最小化" Margin="0,0,0,8"
+                      IsChecked="{Binding StartMinimized}" />
 
-            <CheckBox x:Name="NotifyFavCheck" Content="お気に入りチャンネルを通知"
-                      Margin="0,0,0,8" Click="NotifyFav_Click"/>
+            <CheckBox Content="お気に入りチャンネルを通知" Margin="0,0,0,8"
+                      IsChecked="{Binding NotifyOnFavorite}" />
 
-            <CheckBox x:Name="DoubleClickCheck" Content="ダブルクリックで再生"
-                      Click="DoubleClick_Click"/>
+            <CheckBox Content="ダブルクリックで再生"
+                      IsChecked="{Binding OpenOnDoubleClick}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

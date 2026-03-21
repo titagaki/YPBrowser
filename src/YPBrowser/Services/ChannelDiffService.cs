@@ -1,8 +1,9 @@
+using YPBrowser.Abstractions;
 using YPBrowser.Models;
 
 namespace YPBrowser.Services;
 
-public class ChannelDiffService
+public class ChannelDiffService : IChannelDiffService
 {
     private static readonly TimeSpan LogExpiry = TimeSpan.FromHours(1);
 

@@ -3,20 +3,22 @@ using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using YPBrowser.Abstractions;
+using YPBrowser.Helpers;
 using YPBrowser.Models;
 using YPBrowser.Services;
-using YPBrowser.Settings;
 
 namespace YPBrowser.ViewModels;
 
 public partial class MainViewModel : ObservableObject
 {
-    private readonly AutoRefreshService _refreshService;
-    private readonly ChannelDiffService _diffService;
-    private readonly FavoriteMatchService _favoriteService;
-    private readonly NotificationService _notificationService;
-    private readonly PlayerLaunchService _playerService;
-    private readonly SettingsService _settings;
+    private readonly IAutoRefreshService _refreshService;
+    private readonly IChannelDiffService _diffService;
+    private readonly IFavoriteMatchService _favoriteService;
+    private readonly INotificationService _notificationService;
+    private readonly IPlayerLaunchService _playerService;
+    private readonly ISettingsService _settings;
+    private readonly IChannelFilterService _filterService;
     private Dispatcher? _dispatcher;
 
     // Full merged channel list (all YPs, including log)
@@ -37,12 +39,13 @@ public partial class MainViewModel : ObservableObject
     partial void OnActiveFilterIndexChanged(int value) => ApplyFilter();
 
     public MainViewModel(
-        AutoRefreshService refreshService,
-        ChannelDiffService diffService,
-        FavoriteMatchService favoriteService,
-        NotificationService notificationService,
-        PlayerLaunchService playerService,
-        SettingsService settings)
+        IAutoRefreshService refreshService,
+        IChannelDiffService diffService,
+        IFavoriteMatchService favoriteService,
+        INotificationService notificationService,
+        IPlayerLaunchService playerService,
+        ISettingsService settings,
+        IChannelFilterService filterService)
     {
         _refreshService = refreshService;
         _diffService = diffService;
@@ -50,6 +53,7 @@ public partial class MainViewModel : ObservableObject
         _notificationService = notificationService;
         _playerService = playerService;
         _settings = settings;
+        _filterService = filterService;
 
         _refreshService.RefreshStarted += OnRefreshStarted;
         _refreshService.RefreshCompleted += OnRefreshCompleted;
@@ -82,23 +86,17 @@ public partial class MainViewModel : ObservableObject
         _dispatcher?.BeginInvoke(() =>
         {
             var newList = e.Channels.ToList();
-            var favorites = GetFavoriteItems();
+            var favorites = FavoriteSettingsMapper.ToFavoriteItems(_settings.Current.Favorites);
 
-            // Apply diff
             _diffService.ApplyDiff(_allChannels, newList);
-
-            // Apply favorite matching
             _favoriteService.MatchAll(newList, favorites);
 
-            // Notify new favorites
             var newFavs = _favoriteService.GetNewFavoriteChannels(newList);
             if (_settings.Current.Behavior.NotifyOnFavorite && newFavs.Count > 0)
                 _notificationService.NotifyNewFavorites(newFavs);
 
-            // Update full list
             _allChannels.Clear();
             _allChannels.AddRange(newList);
-            // Add log channels
             _allChannels.AddRange(_diffService.GetAllLogChannels());
 
             ApplyFilter();
@@ -110,74 +108,20 @@ public partial class MainViewModel : ObservableObject
 
     private void ApplyFilter()
     {
-        var query = SearchText.Trim();
-        IEnumerable<ChannelItem> source = _allChannels;
-
-        // Tab filter
-        source = ActiveFilterIndex switch
-        {
-            1 => source.Where(c => c.Diff == ChannelDiff.New),
-            2 => source.Where(c => c.IsFavorite && !c.IsNG),
-            3 => source.Where(c => c.IsNG),
-            4 => source.Where(c => c.Diff == ChannelDiff.Log),
-            _ => source.Where(c => c.Diff != ChannelDiff.Log && !c.IsNG),
-        };
-
-        // Search text filter
-        if (!string.IsNullOrEmpty(query))
-        {
-            source = source.Where(c =>
-                c.ChannelName.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                c.Genre.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                c.Description.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                c.Comment.Contains(query, StringComparison.OrdinalIgnoreCase));
-        }
-
-        // Sort: favorites first, then by listeners desc
-        var sorted = source
-            .OrderByDescending(c => c.IsFavorite ? 1 : 0)
-            .ThenByDescending(c => c.Listeners);
-
+        var filtered = _filterService.Filter(_allChannels, ActiveFilterIndex, SearchText);
         FilteredChannels.Clear();
-        foreach (var ch in sorted)
+        foreach (var ch in filtered)
             FilteredChannels.Add(ch);
     }
 
     private void UpdateStatus()
     {
         var total = _allChannels.Count(c => c.Diff != ChannelDiff.Log);
-        var listeners = _allChannels.Where(c => c.Diff != ChannelDiff.Log && c.Listeners > 0)
-                                    .Sum(c => c.Listeners);
+        var listeners = _allChannels
+            .Where(c => c.Diff != ChannelDiff.Log && c.Listeners > 0)
+            .Sum(c => c.Listeners);
         StatusText = $"{total}チャンネル / {listeners}人視聴中";
         _notificationService.UpdateTrayTooltip(total, listeners);
-    }
-
-    private List<FavoriteItem> GetFavoriteItems()
-    {
-        return _settings.Current.Favorites.Select(f => new FavoriteItem
-        {
-            Title = f.Title,
-            Word = f.Word,
-            TargetFields = ParseTargetFields(f.TargetFields),
-            IsRegex = f.IsRegex,
-            IsNG = f.IsNG,
-            NotifyEnabled = f.NotifyEnabled,
-            Enabled = f.Enabled,
-            BackColor = f.BackColor,
-            TextColor = f.TextColor,
-            SoundFile = f.SoundFile,
-        }).ToList();
-    }
-
-    private static FavoriteTargetFields ParseTargetFields(List<string> fields)
-    {
-        var result = FavoriteTargetFields.None;
-        foreach (var f in fields)
-        {
-            if (Enum.TryParse<FavoriteTargetFields>(f, out var flag))
-                result |= flag;
-        }
-        return result == FavoriteTargetFields.None ? FavoriteTargetFields.ChannelName : result;
     }
 
     [RelayCommand]

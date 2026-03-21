@@ -1,13 +1,14 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using YPBrowser.Abstractions;
 using YPBrowser.Helpers;
 using YPBrowser.Models;
 using YPBrowser.Settings;
 
 namespace YPBrowser.Services;
 
-public class YpFetchService
+public class YpFetchService : IYpFetchService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<YpFetchService> _logger;

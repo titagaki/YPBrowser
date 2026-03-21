@@ -13,19 +13,18 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="80" />
                 </Grid.ColumnDefinitions>
-                <TextBox x:Name="FontFamilyBox" Grid.Column="0" Margin="0,0,4,0"
-                         TextChanged="FontFamilyBox_TextChanged"/>
-                <TextBox x:Name="FontSizeBox" Grid.Column="1"
-                         TextChanged="FontSizeBox_TextChanged"/>
+                <TextBox Grid.Column="0" Margin="0,0,4,0"
+                         Text="{Binding FontFamily, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Grid.Column="1"
+                         Text="{Binding FontSize, UpdateSourceTrigger=PropertyChanged}" />
             </Grid>
 
             <TextBlock Text="チャンネル名色（お気に入り）" Margin="0,0,0,2" />
-            <TextBox x:Name="FavColorBox" Margin="0,0,0,12"
-                     TextChanged="FavColorBox_TextChanged"/>
+            <TextBox Margin="0,0,0,12"
+                     Text="{Binding FavoriteNameColor, UpdateSourceTrigger=PropertyChanged}" />
 
             <TextBlock Text="新着チャンネル色" Margin="0,0,0,2" />
-            <TextBox x:Name="NewColorBox"
-                     TextChanged="NewColorBox_TextChanged"/>
+            <TextBox Text="{Binding NewChannelColor, UpdateSourceTrigger=PropertyChanged}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

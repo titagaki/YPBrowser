@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
-using YPBrowser.Services;
+using YPBrowser.Abstractions;
 using YPBrowser.ViewModels;
 
 namespace YPBrowser.Views;
@@ -10,10 +10,10 @@ namespace YPBrowser.Views;
 public partial class MainWindow : Window
 {
     public MainViewModel ViewModel { get; }
-    private readonly SettingsService _settings;
-    private readonly NotificationService _notificationService;
+    private readonly ISettingsService _settings;
+    private readonly INotificationService _notificationService;
 
-    public MainWindow(MainViewModel viewModel, SettingsService settings, NotificationService notificationService)
+    public MainWindow(MainViewModel viewModel, ISettingsService settings, INotificationService notificationService)
     {
         ViewModel = viewModel;
         _settings = settings;

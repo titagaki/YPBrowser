@@ -1,10 +1,11 @@
 using System.Text.RegularExpressions;
+using YPBrowser.Abstractions;
 using YPBrowser.Models;
 using YPBrowser.Settings;
 
 namespace YPBrowser.Services;
 
-public class FavoriteMatchService
+public class FavoriteMatchService : IFavoriteMatchService
 {
     private readonly Dictionary<string, Regex?> _regexCache = [];
 

@@ -1,10 +1,11 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using YPBrowser.Abstractions;
 using YPBrowser.Settings;
 
 namespace YPBrowser.Services;
 
-public class SettingsService
+public class SettingsService : ISettingsService
 {
     private static readonly string SettingsDir =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "YPBrowser");

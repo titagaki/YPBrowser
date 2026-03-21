@@ -1,11 +1,12 @@
 using Microsoft.Extensions.Logging;
+using YPBrowser.Abstractions;
 using YPBrowser.Models;
 
 namespace YPBrowser.Services;
 
-public class NotificationService : IDisposable
+public class NotificationService : INotificationService, IDisposable
 {
-    private readonly SettingsService _settings;
+    private readonly ISettingsService _settings;
     private readonly ILogger<NotificationService> _logger;
     private bool _disposed;
     private nint _hwnd;
@@ -13,7 +14,7 @@ public class NotificationService : IDisposable
     public event EventHandler? ShowWindowRequested;
     public event EventHandler? ExitRequested;
 
-    public NotificationService(SettingsService settings, ILogger<NotificationService> logger)
+    public NotificationService(ISettingsService settings, ILogger<NotificationService> logger)
     {
         _settings = settings;
         _logger = logger;

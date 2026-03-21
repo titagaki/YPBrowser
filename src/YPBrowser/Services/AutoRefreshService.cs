@@ -1,14 +1,15 @@
 using Microsoft.Extensions.Logging;
+using YPBrowser.Abstractions;
 using YPBrowser.Models;
 
 namespace YPBrowser.Services;
 
-public class AutoRefreshService : IDisposable
+public class AutoRefreshService : IAutoRefreshService, IDisposable
 {
     private static readonly TimeSpan MinFetchInterval = TimeSpan.FromMinutes(4);
 
-    private readonly YpFetchService _fetchService;
-    private readonly SettingsService _settings;
+    private readonly IYpFetchService _fetchService;
+    private readonly ISettingsService _settings;
     private readonly ILogger<AutoRefreshService> _logger;
     private CancellationTokenSource _cts = new();
     private Task? _timerTask;
@@ -21,8 +22,8 @@ public class AutoRefreshService : IDisposable
     public DateTime NextRefreshAt { get; private set; } = DateTime.Now;
 
     public AutoRefreshService(
-        YpFetchService fetchService,
-        SettingsService settings,
+        IYpFetchService fetchService,
+        ISettingsService settings,
         ILogger<AutoRefreshService> logger)
     {
         _fetchService = fetchService;

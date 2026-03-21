@@ -1,15 +1,15 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using YPBrowser.Abstractions;
 using YPBrowser.Models;
-using YPBrowser.Services;
 using YPBrowser.Settings;
 
 namespace YPBrowser.ViewModels;
 
 public partial class SettingsViewModel : ObservableObject
 {
-    private readonly SettingsService _settings;
+    private readonly ISettingsService _settings;
     public AppSettings Current => _settings.Current;
 
     public ObservableCollection<YpServerSettings> YpServers { get; } = [];
@@ -18,7 +18,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private YpServerSettings? _selectedYpServer;
     [ObservableProperty] private PlayerSettings? _selectedPlayer;
 
-    public SettingsViewModel(SettingsService settings)
+    public SettingsViewModel(ISettingsService settings)
     {
         _settings = settings;
         Load();

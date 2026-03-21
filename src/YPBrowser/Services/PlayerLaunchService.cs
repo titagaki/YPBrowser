@@ -1,12 +1,13 @@
 using System.Diagnostics;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using YPBrowser.Abstractions;
 using YPBrowser.Helpers;
 using YPBrowser.Models;
 
 namespace YPBrowser.Services;
 
-public class PlayerLaunchService
+public class PlayerLaunchService : IPlayerLaunchService
 {
     private readonly ILogger<PlayerLaunchService> _logger;
 

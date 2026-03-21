@@ -1,6 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
-using YPBrowser.Services;
+using YPBrowser.Abstractions;
 using YPBrowser.ViewModels;
 using YPBrowser.Views.SettingsPages;
 
@@ -9,9 +9,9 @@ namespace YPBrowser.Views;
 public partial class SettingsDialog : Window
 {
     private readonly SettingsViewModel _viewModel;
-    private readonly SettingsService _settings;
+    private readonly ISettingsService _settings;
 
-    public SettingsDialog(SettingsViewModel viewModel, SettingsService settings)
+    public SettingsDialog(SettingsViewModel viewModel, ISettingsService settings)
     {
         _viewModel = viewModel;
         _settings = settings;

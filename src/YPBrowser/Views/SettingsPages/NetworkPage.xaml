@@ -8,13 +8,15 @@
             <TextBlock Text="ネットワーク設定" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12" />
 
             <TextBlock Text="プロキシURL (省略可)" Margin="0,0,0,2" />
-            <TextBox x:Name="ProxyBox" Margin="0,0,0,12" TextChanged="ProxyBox_TextChanged"/>
+            <TextBox Margin="0,0,0,12"
+                     Text="{Binding ProxyUrl, UpdateSourceTrigger=PropertyChanged}" />
 
             <TextBlock Text="ユーザーエージェント" Margin="0,0,0,2" />
-            <TextBox x:Name="UserAgentBox" Margin="0,0,0,12" TextChanged="UserAgentBox_TextChanged"/>
+            <TextBox Margin="0,0,0,12"
+                     Text="{Binding UserAgent, UpdateSourceTrigger=PropertyChanged}" />
 
             <TextBlock Text="タイムアウト（秒）" Margin="0,0,0,2" />
-            <TextBox x:Name="TimeoutBox" TextChanged="TimeoutBox_TextChanged"/>
+            <TextBox Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>
