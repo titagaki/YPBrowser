@@ -11,7 +11,9 @@ public class ChannelDiffService
 
     public void ApplyDiff(IList<ChannelItem> oldList, IList<ChannelItem> newList)
     {
-        var oldById = oldList.ToDictionary(c => c.Id);
+        var oldById = oldList
+            .GroupBy(c => c.Id)
+            .ToDictionary(g => g.Key, g => g.First());
 
         foreach (var ch in newList)
         {

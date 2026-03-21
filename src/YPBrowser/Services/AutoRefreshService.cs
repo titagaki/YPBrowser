@@ -43,7 +43,7 @@ public class AutoRefreshService : IDisposable
         _timerTask = null;
     }
 
-    public Task RefreshNowAsync() => DoRefreshAsync(CancellationToken.None);
+    public Task RefreshNowAsync() => DoRefreshAsync(CancellationToken.None, force: true);
 
     private async Task RunLoopAsync(CancellationToken ct)
     {
@@ -66,7 +66,7 @@ public class AutoRefreshService : IDisposable
         }
     }
 
-    private async Task DoRefreshAsync(CancellationToken ct)
+    private async Task DoRefreshAsync(CancellationToken ct, bool force = false)
     {
         if (IsRefreshing) return;
         IsRefreshing = true;
@@ -89,8 +89,9 @@ public class AutoRefreshService : IDisposable
                 TypeFilter = serverSettings.TypeFilter,
             };
 
-            // Minimum interval guard
-            if (DateTime.Now - server.LastUpdateTime < MinFetchInterval &&
+            // Minimum interval guard (skipped for manual refresh)
+            if (!force &&
+                DateTime.Now - server.LastUpdateTime < MinFetchInterval &&
                 server.LastUpdateTime != DateTime.MinValue)
             {
                 _logger.LogDebug("Skipping {Name} - too soon since last fetch", server.Name);

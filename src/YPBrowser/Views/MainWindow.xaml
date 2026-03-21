@@ -16,34 +16,32 @@
         </Grid.Resources>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />  <!-- Toolbar -->
-            <RowDefinition Height="Auto" />  <!-- Search + Filter -->
-            <RowDefinition Height="*" />     <!-- List + Detail -->
-            <RowDefinition Height="Auto" />  <!-- StatusBar -->
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Toolbar -->
         <ToolBar Grid.Row="0">
-            <Button Content="更新" Command="{Binding RefreshCommand}" />
-            <Button Content="お気に入り" Click="OpenFavorites_Click" />
+            <Button Content="更新" Command="{Binding RefreshCommand}" Padding="8,3" />
+            <Button Content="お気に入り" Click="OpenFavorites_Click" Padding="8,3" />
             <Separator />
-            <Button Content="設定" Click="OpenSettings_Click" />
+            <Button Content="設定" Click="OpenSettings_Click" Padding="8,3" />
             <Separator />
-            <ProgressBar IsIndeterminate="True" Width="80" Height="10"
+            <ProgressBar IsIndeterminate="True" Width="80" Height="8"
                          Visibility="{Binding IsRefreshing, Converter={StaticResource BoolToVis}}" />
         </ToolBar>
 
         <!-- Search + Filter row -->
-        <Grid Grid.Row="1" Margin="8,4">
+        <Grid Grid.Row="1" Margin="6,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-
             <TextBox Grid.Column="0"
                      Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                     Margin="0,0,8,0" />
-
+                     Margin="0,0,6,0" />
             <ComboBox Grid.Column="1"
                       ItemsSource="{Binding FilterLabels}"
                       SelectedIndex="{Binding ActiveFilterIndex, Mode=TwoWay}"
@@ -54,15 +52,16 @@
         <Grid Grid.Row="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
-                <RowDefinition Height="4" />
+                <RowDefinition Height="5" />
                 <RowDefinition x:Name="DetailRow" Height="150" MinHeight="80" MaxHeight="300" />
             </Grid.RowDefinitions>
 
             <!-- Channel list -->
             <DockPanel Grid.Row="0">
-                <!-- Column header -->
-                <Border DockPanel.Dock="Top" Padding="4,2" BorderThickness="0,0,0,1"
-                        BorderBrush="LightGray">
+                <!-- Column header (left pad=6 matches ListBoxItem padding below) -->
+                <Border DockPanel.Dock="Top" Padding="6,3,6,3"
+                        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                        BorderThickness="0,0,0,1" BorderBrush="#CCCCCC">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" MinWidth="120" />
@@ -71,7 +70,7 @@
                             <ColumnDefinition Width="50" />
                             <ColumnDefinition Width="50" />
                             <ColumnDefinition Width="60" />
-                            <ColumnDefinition Width="16" /><!-- scrollbar gutter -->
+                            <ColumnDefinition Width="17" /><!-- scrollbar gutter -->
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="チャンネル名" FontWeight="SemiBold" FontSize="12" />
                         <TextBlock Grid.Column="1" Text="ジャンル" FontWeight="SemiBold" FontSize="12" />
@@ -88,13 +87,19 @@
                          SelectionChanged="ChannelList_SelectionChanged"
                          MouseDoubleClick="ChannelList_MouseDoubleClick"
                          KeyDown="ChannelList_KeyDown"
+                         BorderThickness="0"
                          VirtualizingStackPanel.IsVirtualizing="True"
                          VirtualizingStackPanel.VirtualizationMode="Recycling"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                          HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="6,2" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="0,2">
+                            <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" MinWidth="120" />
                                     <ColumnDefinition Width="120" />
@@ -110,7 +115,7 @@
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding Genre}"
                                            TextTrimming="CharacterEllipsis"
-                                           FontSize="12" Opacity="0.8" />
+                                           Foreground="#555555" FontSize="12" />
                                 <TextBlock Grid.Column="2"
                                            Text="{Binding BitrateDisplay}"
                                            HorizontalAlignment="Right" FontSize="12" />
@@ -122,7 +127,7 @@
                                            HorizontalAlignment="Right" FontSize="12" />
                                 <TextBlock Grid.Column="5"
                                            Text="{Binding ChannelType}"
-                                           FontSize="12" />
+                                           Foreground="#555555" FontSize="12" />
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -140,17 +145,18 @@
             </DockPanel>
 
             <!-- GridSplitter -->
-            <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch"
-                          Background="LightGray" ResizeBehavior="PreviousAndNext" />
+            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
+                          Background="#DDDDDD" ResizeBehavior="PreviousAndNext" />
 
             <!-- Channel detail panel -->
             <controls:ChannelDetailPanel Grid.Row="2" x:Name="DetailPanel"
                                          BorderThickness="0,1,0,0"
-                                         BorderBrush="LightGray" />
+                                         BorderBrush="#CCCCCC" />
         </Grid>
 
         <!-- Status bar -->
-        <Border Grid.Row="3" Padding="8,4"
+        <Border Grid.Row="3" Padding="8,3"
+                BorderThickness="0,1,0,0" BorderBrush="#CCCCCC"
                 Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -162,7 +168,7 @@
                            VerticalAlignment="Center" FontSize="12" />
                 <TextBlock Grid.Column="1"
                            Text="{Binding NextRefreshText}"
-                           VerticalAlignment="Center" FontSize="12" Opacity="0.7" />
+                           VerticalAlignment="Center" FontSize="12" Foreground="#888888" />
             </Grid>
         </Border>
     </Grid>

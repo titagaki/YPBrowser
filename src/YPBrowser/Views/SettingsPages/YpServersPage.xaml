@@ -21,16 +21,17 @@
                  BorderThickness="1">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Grid Margin="0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <CheckBox Grid.Column="0" IsChecked="{Binding Enabled, Mode=TwoWay}" Margin="0,0,4,0" />
-                        <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="2" Text="{Binding Url}" Opacity="0.6" FontSize="11" VerticalAlignment="Center" />
-                    </Grid>
+                    <DockPanel Margin="2,3">
+                        <CheckBox DockPanel.Dock="Left"
+                                  IsChecked="{Binding Enabled, Mode=TwoWay}"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,6,0" />
+                        <StackPanel>
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Url}" Opacity="0.6" FontSize="11"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </DockPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
@@ -49,7 +50,7 @@
                 <TextBlock Text="編集" FontWeight="SemiBold" Margin="0,0,0,8" />
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="60" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
