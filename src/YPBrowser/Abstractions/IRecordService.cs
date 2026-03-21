@@ -8,4 +8,6 @@ public interface IRecordService
     void StartRecording(ChannelItem channel, DownloaderSettings settings);
     void StopRecording(string channelId);
     bool IsRecording(string channelId);
+    IReadOnlyList<RecordingEntry> ActiveRecordings { get; }
+    event EventHandler RecordingsChanged;
 }

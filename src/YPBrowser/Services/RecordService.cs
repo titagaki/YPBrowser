@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using YPBrowser.Abstractions;
 using YPBrowser.Models;
@@ -22,11 +21,18 @@ public class RecordService : IRecordService
         ["NSV"]  = ".nsv",
     };
 
+    private const int MaxRetries = 10;
+    private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(5);
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<RecordService> _logger;
 
-    // channelId → CancellationTokenSource for active recordings
-    private readonly ConcurrentDictionary<string, CancellationTokenSource> _active = new();
+    private readonly ConcurrentDictionary<string, (CancellationTokenSource Cts, RecordingEntry Entry)> _active = new();
+
+    public IReadOnlyList<RecordingEntry> ActiveRecordings =>
+        _active.Values.Select(v => v.Entry).ToList();
+
+    public event EventHandler? RecordingsChanged;
 
     public RecordService(IHttpClientFactory httpClientFactory, ILogger<RecordService> logger)
     {
@@ -42,88 +48,125 @@ public class RecordService : IRecordService
             return;
         }
 
-        var cts = new CancellationTokenSource();
-        if (!_active.TryAdd(channel.Id, cts))
-        {
-            cts.Dispose();
-            return;
-        }
-
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         var outputDir = ResolveOutputDirectory(settings.OutputDirectory);
         var filename = BuildFilename(channel, settings.FileNameTemplate, timestamp);
         var filePath = Path.Combine(outputDir, filename);
 
-        _logger.LogInformation("Recording started: {Channel} → {File}", channel.ChannelName, filePath);
+        var cts = new CancellationTokenSource();
+        var entry = new RecordingEntry(
+            channel.Id,
+            channel.ChannelName,
+            channel.GenreDescription,
+            filePath);
 
-        _ = Task.Run(() => DownloadAsync(channel.StreamUrl, filePath, channel.Id, cts.Token));
+        if (!_active.TryAdd(channel.Id, (cts, entry)))
+        {
+            cts.Dispose();
+            return;
+        }
+
+        _logger.LogInformation("Recording started: {Channel} → {File}", channel.ChannelName, filePath);
+        RecordingsChanged?.Invoke(this, EventArgs.Empty);
+
+        _ = Task.Run(() => DownloadAsync(channel, filePath, channel.Id, entry, cts.Token));
     }
 
     public void StopRecording(string channelId)
     {
-        if (_active.TryRemove(channelId, out var cts))
+        if (_active.TryRemove(channelId, out var pair))
         {
             _logger.LogInformation("Recording stopped for channel {Id}", channelId);
-            cts.Cancel();
-            cts.Dispose();
+            pair.Cts.Cancel();
+            pair.Cts.Dispose();
+            RecordingsChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
     public bool IsRecording(string channelId) => _active.ContainsKey(channelId);
 
-    private async Task DownloadAsync(string initialUrl, string filePath, string channelId, CancellationToken ct)
+    private async Task DownloadAsync(
+        ChannelItem channel, string filePath, string channelId,
+        RecordingEntry entry, CancellationToken ct)
     {
         try
         {
             var client = _httpClientFactory.CreateClient("RecordService");
-
-            // PeerCast の /pls/ エンドポイントは PLS テキストを返す場合がある。
-            // PLS/M3U を検出してストリーム URL に解決する。
-            var streamUrl = await ResolveStreamUrlAsync(client, initialUrl, ct);
-            _logger.LogInformation("Resolved stream URL: {Url}", streamUrl);
-
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
-            using var response = await client.GetAsync(streamUrl, HttpCompletionOption.ResponseHeadersRead, ct);
-            response.EnsureSuccessStatusCode();
 
             await using var fileStream = new FileStream(
                 filePath, FileMode.Create, FileAccess.Write, FileShare.Read,
                 bufferSize: 81920, useAsync: true);
 
-            await response.Content.CopyToAsync(fileStream, ct);
+            for (int attempt = 0; attempt <= MaxRetries; attempt++)
+            {
+                if (attempt > 0)
+                {
+                    _logger.LogWarning("Retry {Attempt}/{Max} for channel {Id}", attempt, MaxRetries, channelId);
+                    entry.RetryCount = attempt;
+                    await Task.Delay(RetryDelay, ct);
+                }
 
-            _logger.LogInformation("Recording completed: {File}", filePath);
-        }
-        catch (OperationCanceledException)
-        {
-            _logger.LogInformation("Recording cancelled: {File}", filePath);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Recording failed for channel {Id}", channelId);
+                try
+                {
+                    var streamUrl = await ResolveStreamUrlAsync(client, channel.StreamUrl, ct);
+                    if (attempt == 0)
+                        _logger.LogInformation("Resolved stream URL: {Url}", streamUrl);
+
+                    using var response = await client.GetAsync(
+                        streamUrl, HttpCompletionOption.ResponseHeadersRead, ct);
+                    response.EnsureSuccessStatusCode();
+
+                    await using var networkStream = await response.Content.ReadAsStreamAsync(ct);
+                    await CopyWithProgressAsync(networkStream, fileStream, entry, ct);
+
+                    _logger.LogInformation("Recording completed: {File}", filePath);
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.LogInformation("Recording cancelled: {File}", filePath);
+                    return;
+                }
+                catch (Exception ex) when (attempt < MaxRetries)
+                {
+                    _logger.LogWarning(ex, "Recording interrupted for channel {Id}, will retry in {Delay}s",
+                        channelId, RetryDelay.TotalSeconds);
+                }
+            }
+
+            _logger.LogError("Recording failed after {Max} retries for channel {Id}", MaxRetries, channelId);
         }
         finally
         {
-            if (_active.TryRemove(channelId, out var cts))
-                cts.Dispose();
+            if (_active.TryRemove(channelId, out var pair))
+            {
+                pair.Cts.Dispose();
+                RecordingsChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 
-    /// <summary>
-    /// PLS/M3U ファイルを取得・パースして実際のストリーム URL を返す。
-    /// プレイリストでない場合は initialUrl をそのまま返す。
-    /// </summary>
+    private static async Task CopyWithProgressAsync(
+        Stream source, Stream dest, RecordingEntry entry, CancellationToken ct)
+    {
+        var buffer = new byte[81920];
+        int read;
+        while ((read = await source.ReadAsync(buffer, ct)) > 0)
+        {
+            await dest.WriteAsync(buffer.AsMemory(0, read), ct);
+            entry.AddBytes(read); // UI 更新は毎秒 Tick() で行う
+        }
+    }
+
     private async Task<string> ResolveStreamUrlAsync(HttpClient client, string initialUrl, CancellationToken ct)
     {
-        // ヘッダーを含めた全体を読む（PLS は数百バイト）
         using var response = await client.GetAsync(initialUrl, ct);
         if (!response.IsSuccessStatusCode)
             return initialUrl;
 
         var content = await response.Content.ReadAsStringAsync(ct);
 
-        // PLS フォーマット判定
         if (content.Contains("[playlist]", StringComparison.OrdinalIgnoreCase))
         {
             var resolved = ParsePlsUrl(content);
@@ -134,7 +177,6 @@ public class RecordService : IRecordService
             }
         }
 
-        // M3U フォーマット判定
         if (content.StartsWith("#EXTM3U", StringComparison.OrdinalIgnoreCase) ||
             content.StartsWith("#EXT-X-", StringComparison.OrdinalIgnoreCase))
         {
@@ -146,7 +188,6 @@ public class RecordService : IRecordService
             }
         }
 
-        // プレイリストでなければそのまま
         return initialUrl;
     }
 

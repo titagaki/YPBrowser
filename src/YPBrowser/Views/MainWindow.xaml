@@ -70,150 +70,260 @@
                       MinWidth="120" />
         </Grid>
 
-        <!-- Channel list + detail panel -->
-        <Grid Grid.Row="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="5" />
-                <RowDefinition x:Name="DetailRow" Height="150" MinHeight="80" MaxHeight="300" />
-            </Grid.RowDefinitions>
+        <!-- Tab: チャンネル一覧 / 録画中 -->
+        <TabControl Grid.Row="2" x:Name="MainTabControl" BorderThickness="0">
+            <!-- チャンネル一覧タブ -->
+            <TabItem Header="チャンネル一覧">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="5" />
+                        <RowDefinition x:Name="DetailRow" Height="150" MinHeight="80" MaxHeight="300" />
+                    </Grid.RowDefinitions>
 
-            <!-- Channel list -->
-            <DockPanel Grid.Row="0">
-                <!-- Column header -->
-                <Border DockPanel.Dock="Top" Padding="6,3,6,3"
-                        Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
-                        BorderThickness="0,0,0,1" BorderBrush="#CCCCCC">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" MinWidth="120" />
-                            <ColumnDefinition Width="1" />
-                            <ColumnDefinition Width="75" />
-                            <ColumnDefinition Width="1" />
-                            <ColumnDefinition Width="65" />
-                            <ColumnDefinition Width="17" /><!-- scrollbar gutter -->
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="チャンネル名" FontWeight="SemiBold" FontSize="12" />
-                        <Rectangle Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
-                        <TextBlock Grid.Column="2" Text="視聴/リレー" FontWeight="SemiBold" FontSize="12"
-                                   HorizontalAlignment="Right" Margin="4,0"/>
-                        <Rectangle Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
-                        <TextBlock Grid.Column="4" Text="ビットレート" FontWeight="SemiBold" FontSize="12"
-                                   Margin="6,0,0,0"/>
-                    </Grid>
-                </Border>
-
-                <ListBox x:Name="ChannelListView"
-                         ItemsSource="{Binding FilteredChannels}"
-                         SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
-                         SelectionChanged="ChannelList_SelectionChanged"
-                         MouseDoubleClick="ChannelList_MouseDoubleClick"
-                         KeyDown="ChannelList_KeyDown"
-                         BorderThickness="0"
-                         VirtualizingStackPanel.IsVirtualizing="True"
-                         VirtualizingStackPanel.VirtualizationMode="Recycling"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         HorizontalContentAlignment="Stretch">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="6,0" />
-                            <Setter Property="Background" Value="{Binding FavBackColor, Converter={StaticResource ColorToBrush}}" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Diff}" Value="Log">
-                                    <Setter Property="Background" Value="#EFEFEF" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
+                    <!-- Channel list -->
+                    <DockPanel Grid.Row="0">
+                        <!-- Column header -->
+                        <Border DockPanel.Dock="Top" Padding="6,3,6,3"
+                                Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                                BorderThickness="0,0,0,1" BorderBrush="#CCCCCC">
                             <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="*" />
-                                    <RowDefinition Height="1" />
-                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" MinWidth="120" />
                                     <ColumnDefinition Width="1" />
                                     <ColumnDefinition Width="75" />
                                     <ColumnDefinition Width="1" />
                                     <ColumnDefinition Width="65" />
+                                    <ColumnDefinition Width="17" /><!-- scrollbar gutter -->
                                 </Grid.ColumnDefinitions>
-                                <!-- Channel name + genre/description (2 lines) -->
-                                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,3,4,3">
-                                    <TextBlock Text="{Binding ChannelName}"
-                                               TextTrimming="CharacterEllipsis"
-                                               ToolTip="{Binding ChannelName}"
-                                               Foreground="{Binding Diff, Converter={StaticResource DiffToColor}}"
-                                               FontSize="12" />
-                                    <TextBlock Text="{Binding GenreDescription}"
-                                               TextTrimming="CharacterEllipsis"
-                                               Foreground="#777777" FontSize="11">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding GenreDescription}" Value="">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </StackPanel>
-                                <!-- 縦の点線セパレータ -->
-                                <Rectangle Grid.Row="0" Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
-                                <Rectangle Grid.Row="0" Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
-                                <!-- Listeners/Relays + Uptime (2 lines) -->
-                                <StackPanel Grid.Row="0" Grid.Column="2"
-                                            HorizontalAlignment="Right" VerticalAlignment="Center"
-                                            Margin="4,3">
-                                    <TextBlock Text="{Binding ListenersRelaysDisplay}"
-                                               HorizontalAlignment="Right" FontSize="12" />
-                                    <TextBlock Text="{Binding BroadcastTimeStr}"
-                                               HorizontalAlignment="Right" FontSize="11" Foreground="#888888" />
-                                </StackPanel>
-                                <!-- Bitrate / Codec (2 lines) -->
-                                <StackPanel Grid.Row="0" Grid.Column="4"
-                                            HorizontalAlignment="Right" VerticalAlignment="Center"
-                                            Margin="6,3,0,3">
-                                    <TextBlock Text="{Binding BitrateDisplay}"
-                                               HorizontalAlignment="Right" FontSize="12" />
-                                    <TextBlock Text="{Binding ChannelType}"
-                                               HorizontalAlignment="Right" FontSize="11" Foreground="#555555" />
-                                </StackPanel>
-                                <!-- 横の点線セパレータ (行の下端) -->
-                                <Rectangle Grid.Row="1" Grid.ColumnSpan="5"
-                                           Fill="{StaticResource DashedHSepBrush}" />
+                                <TextBlock Grid.Column="0" Text="チャンネル名" FontWeight="SemiBold" FontSize="12" />
+                                <Rectangle Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
+                                <TextBlock Grid.Column="2" Text="視聴/リレー" FontWeight="SemiBold" FontSize="12"
+                                           HorizontalAlignment="Right" Margin="4,0"/>
+                                <Rectangle Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
+                                <TextBlock Grid.Column="4" Text="ビットレート" FontWeight="SemiBold" FontSize="12"
+                                           Margin="6,0,0,0"/>
                             </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                    <ListBox.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem Header="再生" Click="PlayChannel_Click" />
-                            <Separator />
-                            <MenuItem Header="コンタクトURLを開く" Click="OpenContact_Click" />
-                            <MenuItem Header="統計URLを開く" Click="OpenStats_Click" />
-                            <Separator />
-                            <MenuItem Header="お気に入りに追加" Click="AddFavorite_Click" />
-                            <MenuItem Header="お気に入りから削除" Click="RemoveFavorite_Click" />
-                            <MenuItem Header="コピー（チャンネル情報）" Click="CopyChannelDetail_Click" />
-                            <MenuItem Header="コピー（プレイリストURL）" Click="CopyUrl_Click" />
-                            <Separator />
-                            <MenuItem Header="録音/録画" Click="StartRecord_Click" />
-                        </ContextMenu>
-                    </ListBox.ContextMenu>
-                </ListBox>
-            </DockPanel>
+                        </Border>
 
-            <!-- GridSplitter -->
-            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
-                          Background="#DDDDDD" ResizeBehavior="PreviousAndNext" />
+                        <ListBox x:Name="ChannelListView"
+                                 ItemsSource="{Binding FilteredChannels}"
+                                 SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
+                                 SelectionChanged="ChannelList_SelectionChanged"
+                                 MouseDoubleClick="ChannelList_MouseDoubleClick"
+                                 KeyDown="ChannelList_KeyDown"
+                                 BorderThickness="0"
+                                 VirtualizingStackPanel.IsVirtualizing="True"
+                                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 HorizontalContentAlignment="Stretch">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="6,0" />
+                                    <Setter Property="Background" Value="{Binding FavBackColor, Converter={StaticResource ColorToBrush}}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Diff}" Value="Log">
+                                            <Setter Property="Background" Value="#EFEFEF" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="1" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" MinWidth="120" />
+                                            <ColumnDefinition Width="1" />
+                                            <ColumnDefinition Width="75" />
+                                            <ColumnDefinition Width="1" />
+                                            <ColumnDefinition Width="65" />
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Channel name + genre/description (2 lines) -->
+                                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,3,4,3">
+                                            <TextBlock Text="{Binding ChannelName}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding ChannelName}"
+                                                       Foreground="{Binding Diff, Converter={StaticResource DiffToColor}}"
+                                                       FontSize="12" />
+                                            <TextBlock Text="{Binding GenreDescription}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="#777777" FontSize="11">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding GenreDescription}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <!-- 縦の点線セパレータ -->
+                                        <Rectangle Grid.Row="0" Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
+                                        <Rectangle Grid.Row="0" Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
+                                        <!-- Listeners/Relays + Uptime (2 lines) -->
+                                        <StackPanel Grid.Row="0" Grid.Column="2"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                    Margin="4,3">
+                                            <TextBlock Text="{Binding ListenersRelaysDisplay}"
+                                                       HorizontalAlignment="Right" FontSize="12" />
+                                            <TextBlock Text="{Binding BroadcastTimeStr}"
+                                                       HorizontalAlignment="Right" FontSize="11" Foreground="#888888" />
+                                        </StackPanel>
+                                        <!-- Bitrate / Codec (2 lines) -->
+                                        <StackPanel Grid.Row="0" Grid.Column="4"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                    Margin="6,3,0,3">
+                                            <TextBlock Text="{Binding BitrateDisplay}"
+                                                       HorizontalAlignment="Right" FontSize="12" />
+                                            <TextBlock Text="{Binding ChannelType}"
+                                                       HorizontalAlignment="Right" FontSize="11" Foreground="#555555" />
+                                        </StackPanel>
+                                        <!-- 横の点線セパレータ (行の下端) -->
+                                        <Rectangle Grid.Row="1" Grid.ColumnSpan="5"
+                                                   Fill="{StaticResource DashedHSepBrush}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                            <ListBox.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="再生" Click="PlayChannel_Click" />
+                                    <Separator />
+                                    <MenuItem Header="コンタクトURLを開く" Click="OpenContact_Click" />
+                                    <MenuItem Header="統計URLを開く" Click="OpenStats_Click" />
+                                    <Separator />
+                                    <MenuItem Header="お気に入りに追加" Click="AddFavorite_Click" />
+                                    <MenuItem Header="お気に入りから削除" Click="RemoveFavorite_Click" />
+                                    <MenuItem Header="コピー（チャンネル情報）" Click="CopyChannelDetail_Click" />
+                                    <MenuItem Header="コピー（プレイリストURL）" Click="CopyUrl_Click" />
+                                    <Separator />
+                                    <MenuItem Header="録音/録画" Click="StartRecord_Click" />
+                                </ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
+                    </DockPanel>
 
-            <!-- Channel detail panel -->
-            <controls:ChannelDetailPanel Grid.Row="2" x:Name="DetailPanel"
-                                         BorderThickness="0,1,0,0"
-                                         BorderBrush="#CCCCCC" />
-        </Grid>
+                    <!-- GridSplitter -->
+                    <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
+                                  Background="#DDDDDD" ResizeBehavior="PreviousAndNext" />
+
+                    <!-- Channel detail panel -->
+                    <controls:ChannelDetailPanel Grid.Row="2" x:Name="DetailPanel"
+                                                 BorderThickness="0,1,0,0"
+                                                 BorderBrush="#CCCCCC" />
+                </Grid>
+            </TabItem>
+
+            <!-- 録画中タブ -->
+            <TabItem Header="{Binding RecordingEntries.Count, StringFormat=録画中 ({0})}">
+                <DockPanel>
+                    <!-- Column header: BorderPadding の横幅 = ListBoxItem の Padding 横幅 にすることで
+                         gutter=17(スクロールバー幅)だけで罫線位置が揃う -->
+                    <Border DockPanel.Dock="Top" Padding="2,3,2,3"
+                            Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                            BorderThickness="0,0,0,1" BorderBrush="#CCCCCC">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="44" /><!-- 停止ボタン -->
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="130" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="40" />
+                                <ColumnDefinition Width="17" /><!-- scrollbar gutter = ScrollBarWidth(17) + ItemPad(4) - BorderPad(4) -->
+                            </Grid.ColumnDefinitions>
+                            <Rectangle Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
+                            <TextBlock Grid.Column="2" Text="チャンネル名" FontWeight="SemiBold" FontSize="12" />
+                            <Rectangle Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
+                            <TextBlock Grid.Column="4" Text="チャンネル詳細" FontWeight="SemiBold" FontSize="12" Margin="6,0,0,0"/>
+                            <Rectangle Grid.Column="5" Fill="{StaticResource DashedVSepBrush}" />
+                            <TextBlock Grid.Column="6" Text="ダウンロードステータス" FontWeight="SemiBold" FontSize="12"
+                                       HorizontalAlignment="Right" Margin="0,0,4,0"/>
+                            <Rectangle Grid.Column="7" Fill="{StaticResource DashedVSepBrush}" />
+                            <TextBlock Grid.Column="8" Text="リトライ" FontWeight="SemiBold" FontSize="12"
+                                       HorizontalAlignment="Right" Margin="0,0,4,0"/>
+                        </Grid>
+                    </Border>
+
+                    <ListBox ItemsSource="{Binding RecordingEntries}"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             HorizontalContentAlignment="Stretch">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="2,0" />
+                                <Setter Property="Background" Value="White" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                        <Setter Property="Background" Value="#EDE7F6" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="1" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="44" />
+                                        <ColumnDefinition Width="1" />
+                                        <ColumnDefinition Width="140" />
+                                        <ColumnDefinition Width="1" />
+                                        <ColumnDefinition Width="2*" />
+                                        <ColumnDefinition Width="1" />
+                                        <ColumnDefinition Width="130" />
+                                        <ColumnDefinition Width="1" />
+                                        <ColumnDefinition Width="40" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- 停止ボタン（アクティブ時のみ表示） -->
+                                    <Button Grid.Column="0" Content="停止"
+                                            Padding="2,1" Margin="2,2"
+                                            Click="StopRecord_Click"
+                                            Tag="{Binding ChannelId}"
+                                            Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
+                                    <Rectangle Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
+                                    <!-- チャンネル名（終了後は「（終了）」付き・ファイルパスをツールチップ） -->
+                                    <TextBlock Grid.Column="2" Text="{Binding DisplayName}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding FilePath}"
+                                               FontSize="12" VerticalAlignment="Center" Margin="4,3,4,3"/>
+                                    <Rectangle Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
+                                    <!-- チャンネル詳細 -->
+                                    <TextBlock Grid.Column="4" Text="{Binding ChannelDetail}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding ChannelDetail}"
+                                               FontSize="11" Foreground="#555555"
+                                               VerticalAlignment="Center" Margin="6,3,4,3"/>
+                                    <Rectangle Grid.Column="5" Fill="{StaticResource DashedVSepBrush}" />
+                                    <!-- ダウンロードステータス（右寄せ） -->
+                                    <TextBlock Grid.Column="6" Text="{Binding StatusDisplay}"
+                                               FontSize="12" HorizontalAlignment="Right"
+                                               VerticalAlignment="Center" Margin="4,3,4,3"/>
+                                    <Rectangle Grid.Column="7" Fill="{StaticResource DashedVSepBrush}" />
+                                    <!-- リトライ回数（0 は空欄・右寄せ） -->
+                                    <TextBlock Grid.Column="8" Text="{Binding RetryCountDisplay}"
+                                               FontSize="12" HorizontalAlignment="Right"
+                                               VerticalAlignment="Center" Margin="4,3,4,3"/>
+                                    <Rectangle Grid.Row="1" Grid.ColumnSpan="9"
+                                               Fill="{StaticResource DashedHSepBrush}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
 
         <!-- Status bar -->
         <Border Grid.Row="3" Padding="8,3"

@@ -27,6 +27,7 @@ public partial class MainViewModel : ObservableObject
     private readonly List<ChannelItem> _allChannels = [];
 
     public ObservableCollection<ChannelItem> FilteredChannels { get; } = [];
+    public ObservableCollection<RecordingEntry> RecordingEntries { get; } = [];
 
     [ObservableProperty] private ChannelItem? _selectedChannel;
     [ObservableProperty] private string _searchText = "";
@@ -63,6 +64,7 @@ public partial class MainViewModel : ObservableObject
 
         _refreshService.RefreshStarted += OnRefreshStarted;
         _refreshService.RefreshCompleted += OnRefreshCompleted;
+        _recordService.RecordingsChanged += OnRecordingsChanged;
     }
 
     public void Initialize(Dispatcher dispatcher)
@@ -70,7 +72,7 @@ public partial class MainViewModel : ObservableObject
         _dispatcher = dispatcher;
         _refreshService.Start();
 
-        // Countdown timer
+        // Countdown + recording elapsed timer
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         timer.Tick += (_, _) =>
         {
@@ -78,8 +80,30 @@ public partial class MainViewModel : ObservableObject
             NextRefreshText = remaining > TimeSpan.Zero
                 ? $"次回更新: {(int)remaining.TotalSeconds}秒後"
                 : "更新中...";
+
+            foreach (var entry in RecordingEntries)
+                entry.Tick();
         };
         timer.Start();
+    }
+
+    private void OnRecordingsChanged(object? sender, EventArgs e)
+    {
+        _dispatcher?.BeginInvoke(() =>
+        {
+            var activeIds = _recordService.ActiveRecordings
+                .Select(r => r.ChannelId).ToHashSet();
+
+            // 停止したエントリを非活性化（削除せずに残す）
+            foreach (var entry in RecordingEntries.Where(r => r.IsActive && !activeIds.Contains(r.ChannelId)))
+                entry.IsActive = false;
+
+            // 新規エントリを追加（アクティブ中のものだけを重複チェック対象にする）
+            var existingActiveIds = RecordingEntries
+                .Where(r => r.IsActive).Select(r => r.ChannelId).ToHashSet();
+            foreach (var entry in _recordService.ActiveRecordings.Where(r => !existingActiveIds.Contains(r.ChannelId)))
+                RecordingEntries.Insert(0, entry);
+        });
     }
 
     private void OnRefreshStarted(object? sender, EventArgs e)
@@ -237,6 +261,13 @@ public partial class MainViewModel : ObservableObject
             _recordService.StartRecording(channel, _settings.Current.Downloader);
             StatusText = $"録音開始: {channel.ChannelName}";
         }
+    }
+
+    [RelayCommand]
+    private void StopRecord(string? channelId)
+    {
+        if (channelId == null) return;
+        _recordService.StopRecording(channelId);
     }
 
     public bool IsChannelRecording(string channelId) => _recordService.IsRecording(channelId);

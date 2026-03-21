@@ -119,6 +119,12 @@ public partial class MainWindow : Window
         ViewModel.ToggleRecordCommand.Execute(ViewModel.SelectedChannel);
     }
 
+    private void StopRecord_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button btn && btn.Tag is string channelId)
+            ViewModel.StopRecordCommand.Execute(channelId);
+    }
+
     private void OpenSettings_Click(object sender, RoutedEventArgs e)
     {
         var dialog = App.Services.GetRequiredService<SettingsViewModel>();
