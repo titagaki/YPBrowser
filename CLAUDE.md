@@ -41,6 +41,8 @@ dotnet build YPBrowser.sln -p:Platform=x64
 | `AutoRefreshService` | 定期更新 (PeriodicTimer) |
 | `MainViewModel` | UI オーケストレーター |
 | `SettingsService` | JSON 設定の読み書き |
+| `RecordService` | HTTP ストリーム保存・PLS/M3U 解決・再試行 (最大10回)・進捗追跡 |
+| `RecordingEntry` | 録画中エントリの実行時状態 (進捗・リトライ数・IsActive) |
 
 ## ドキュメント
 

@@ -9,14 +9,17 @@
 ```
 RecordService.StartRecording()
     │
-    ├─ CancellationTokenSource を生成・保存
+    ├─ RecordingEntry を生成・_active に登録
     └─ Task.Run( DownloadAsync )  ← バックグラウンドで実行
            │
            ├─ ResolveStreamUrlAsync()   ← PLS を解決して実ストリーム URL を取得
            │       GET /pls/{id} → PLS テキストをパース → File1= の URL を抽出
            │
-           └─ GET /stream/{id}?tip=...  ← 実ストリームに接続
-                   レスポンスボディ → FileStream に CopyToAsync
+           └─ リトライループ (最大 10 回、5 秒間隔)
+                   │
+                   └─ GET /stream/{id}?tip=...
+                           CopyWithProgressAsync → FileStream に書き込み
+                           entry.AddBytes(n) で進捗を積算
 ```
 
 ## PLS 解決が必要な理由
@@ -68,20 +71,79 @@ _recordService.StopRecording(channelId);
 
 // 録音中かどうか
 bool recording = _recordService.IsRecording(channelId);
+
+// 現在録音中の一覧
+IReadOnlyList<RecordingEntry> active = _recordService.ActiveRecordings;
 ```
 
-`ConcurrentDictionary<string, CancellationTokenSource>` で
+`ConcurrentDictionary<string, (CancellationTokenSource, RecordingEntry)>` で
 録音中チャンネルを管理する。`StopRecording()` は CTS をキャンセルし、
-`CopyToAsync` が `OperationCanceledException` で終了する。
+`CopyWithProgressAsync` が `OperationCanceledException` で終了する。
 
 ### 停止時のファイル
 
 キャンセルされた時点までのバイト列がファイルに残る。
 不完全なファイルでも多くのプレイヤーは途中まで再生できる。
 
+## 自動再試行
+
+接続が切れた場合、自動で再接続を試みる。
+
+| 設定 | 値 |
+|---|---|
+| 最大試行回数 | 10 回 |
+| 再試行間隔 | 5 秒 |
+| キャンセル時 | リトライしない |
+
+再試行時は同じファイルに追記する（`FileMode.Create` は最初の 1 回のみ）。
+`RecordingEntry.RetryCount` が 1 ずつ増加し、UI のリトライ列に反映される。
+
+```
+attempt 0: 接続成功、ダウンロード中 → 切断
+attempt 1: 5 秒待機 → 再接続・ダウンロード再開  (RetryCount = 1)
+...
+attempt 10: 失敗なら中断してログにエラー出力
+```
+
+## 進捗追跡
+
+バックグラウンドスレッド上でのバイト加算と UI 更新を分離している。
+
+```
+[バックグラウンドスレッド]
+CopyWithProgressAsync → entry.AddBytes(n)
+                            └─ Interlocked.Add(_pendingBytes, n)  ← スレッドセーフ
+
+[UI スレッド・1秒ごと]
+DispatcherTimer.Tick → entry.Tick()
+    └─ BytesDownloaded = _pendingBytes  → StatusDisplay が更新される
+```
+
+`BytesDownloaded` は毎秒まとめて更新されるため、表示の数字は 1 秒ごとに変化する。
+
+## RecordingEntry
+
+録音 1 件分の実行時状態を表す `ObservableObject`。設定値（`DownloaderSettings`）とは別に存在する。
+
+| プロパティ | 型 | 内容 |
+|---|---|---|
+| `ChannelId` | string | チャンネル識別子 |
+| `ChannelName` | string | チャンネル名 |
+| `ChannelDetail` | string | `GenreDescription`（ジャンル・説明） |
+| `FilePath` | string | 保存先フルパス |
+| `StartedAt` | DateTime | 録音開始時刻 |
+| `BytesDownloaded` | long | 保存済みバイト数（1秒毎更新） |
+| `RetryCount` | int | 再試行回数 |
+| `IsActive` | bool | `true` = 録音中、`false` = 終了 |
+| `DisplayName` | string (computed) | 終了後は `"チャンネル名（終了）"` |
+| `RetryCountDisplay` | string (computed) | 0 のとき空文字 |
+| `StatusDisplay` | string (computed) | `"(0:09:39) 5,444KB"` 形式 |
+
+`IsActive` が `false` になると終了時刻が固定され、`StatusDisplay` の経過時間が止まる。
+
 ## UI からの操作
 
-右クリックメニュー「録音/録画」は **トグル**動作。
+チャンネル一覧の右クリックメニュー「録音/録画」は **トグル**動作。
 
 ```csharp
 if (_recordService.IsRecording(channel.Id))
@@ -89,6 +151,17 @@ if (_recordService.IsRecording(channel.Id))
 else
     StartRecording → StatusText = "録音開始: ..."
 ```
+
+### 録画中タブ
+
+メインウィンドウの「録画中 (N)」タブで録音状況を一覧できる。
+
+- 新しい録音は**上に追加**される
+- 録音中のエントリは**薄紫背景**、終了後は白背景で残る
+- 停止ボタンは録音中のみ表示
+
+`MainViewModel.RecordingEntries` が `RecordService.RecordingsChanged` イベントで更新される。
+停止したエントリは `IsActive = false` になるだけで削除されない。
 
 ## ファイル名の生成
 
@@ -153,8 +226,10 @@ if (!isFirstFetch)  // 起動時はスキップ
 `StopRecording()` が先に呼ばれた場合は `_active` から既に削除済みのため
 `TryRemove()` は何も削除しない（二重解放なし）。
 
-### ネットワーク切断
+どちらが先に呼ばれても `RecordingsChanged` が発火し、UI が更新される。
 
-録音中に PeerCast が停止したり接続が切れた場合、
-`CopyToAsync` は例外で終了し、ログに記録されてファイルは閉じられる。
-自動再試行はない。
+### 最大リトライ後のファイル
+
+10 回リトライしても接続できない場合、ダウンロードタスクが終了し
+`RecordingEntry.IsActive` が `false` になる。
+ファイルはそれまでに書き込まれたバイト列がそのまま残る（自動削除しない）。

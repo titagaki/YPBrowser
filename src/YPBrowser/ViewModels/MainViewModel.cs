@@ -81,7 +81,7 @@ public partial class MainViewModel : ObservableObject
                 ? $"次回更新: {(int)remaining.TotalSeconds}秒後"
                 : "更新中...";
 
-            foreach (var entry in RecordingEntries)
+            foreach (var entry in RecordingEntries.ToList())
                 entry.Tick();
         };
         timer.Start();
@@ -95,7 +95,7 @@ public partial class MainViewModel : ObservableObject
                 .Select(r => r.ChannelId).ToHashSet();
 
             // 停止したエントリを非活性化（削除せずに残す）
-            foreach (var entry in RecordingEntries.Where(r => r.IsActive && !activeIds.Contains(r.ChannelId)))
+            foreach (var entry in RecordingEntries.Where(r => r.IsActive && !activeIds.Contains(r.ChannelId)).ToList())
                 entry.IsActive = false;
 
             // 新規エントリを追加（アクティブ中のものだけを重複チェック対象にする）
