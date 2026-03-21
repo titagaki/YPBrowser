@@ -52,6 +52,8 @@ public partial class App : Application
         services.AddSingleton<IAutoRefreshService, AutoRefreshService>();
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<IPlayerLaunchService, PlayerLaunchService>();
+        services.AddSingleton<IRecordService, RecordService>();
+        services.AddSingleton<IAutoDownloadMatchService, AutoDownloadMatchService>();
 
         // ViewModels
         services.AddSingleton<MainViewModel>();

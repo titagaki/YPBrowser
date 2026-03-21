@@ -114,6 +114,11 @@ public partial class MainWindow : Window
         ViewModel.CopyChannelDetailCommand.Execute(ViewModel.SelectedChannel);
     }
 
+    private void StartRecord_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.StartRecordCommand.Execute(ViewModel.SelectedChannel);
+    }
+
     private void OpenSettings_Click(object sender, RoutedEventArgs e)
     {
         var dialog = App.Services.GetRequiredService<SettingsViewModel>();

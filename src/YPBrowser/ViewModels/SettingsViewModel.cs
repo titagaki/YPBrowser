@@ -25,9 +25,12 @@ public partial class SettingsViewModel : ObservableObject
     private PlayerSettings? _selectedPlayer;
     public bool HasSelectedPlayer => SelectedPlayer != null;
 
+    public AutoDownloadViewModel AutoDownload { get; }
+
     public SettingsViewModel(ISettingsService settings)
     {
         _settings = settings;
+        AutoDownload = new AutoDownloadViewModel(settings);
         Load();
     }
 
@@ -89,6 +92,7 @@ public partial class SettingsViewModel : ObservableObject
     {
         _settings.Current.YpServers = [.. YpServers];
         _settings.Current.Players = [.. Players];
+        AutoDownload.Flush();
         await _settings.SaveAsync();
     }
 }

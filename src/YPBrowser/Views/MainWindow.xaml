@@ -198,6 +198,8 @@
                             <MenuItem Header="お気に入りから削除" Click="RemoveFavorite_Click" />
                             <MenuItem Header="コピー（チャンネル情報）" Click="CopyChannelDetail_Click" />
                             <MenuItem Header="コピー（プレイリストURL）" Click="CopyUrl_Click" />
+                            <Separator />
+                            <MenuItem Header="録音/録画" Click="StartRecord_Click" />
                         </ContextMenu>
                     </ListBox.ContextMenu>
                 </ListBox>

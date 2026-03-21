@@ -5,6 +5,8 @@ public class AppSettings
     public List<YpServerSettings> YpServers { get; set; } = [];
     public List<FavoriteSettings> Favorites { get; set; } = [];
     public List<PlayerSettings> Players { get; set; } = [];
+    public List<AutoDownloadRuleSettings> AutoDownloadRules { get; set; } = [];
+    public DownloaderSettings Downloader { get; set; } = new();
     public NetworkSettings Network { get; set; } = new();
     public DisplaySettings Display { get; set; } = new();
     public NotificationSettings Notifications { get; set; } = new();
@@ -89,4 +91,21 @@ public class WindowSettings
     public double X { get; set; } = -1;
     public double Y { get; set; } = -1;
     public double SplitterPosition { get; set; } = 150;
+}
+
+public class DownloaderSettings
+{
+    public string ExecutablePath { get; set; } = "";
+    public string ArgumentTemplate { get; set; } = "-i \"{url}\" -c copy \"{outputDir}\\{filename}\"";
+    public string OutputDirectory { get; set; } = "";
+    public string FileNameTemplate { get; set; } = "{channelName}_{timestamp}";
+}
+
+public class AutoDownloadRuleSettings
+{
+    public string Title { get; set; } = "";
+    public string Word { get; set; } = "";
+    public List<string> TargetFields { get; set; } = ["ChannelName"];
+    public bool IsRegex { get; set; } = false;
+    public bool Enabled { get; set; } = true;
 }

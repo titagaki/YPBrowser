@@ -30,6 +30,7 @@
                 <ListBoxItem Content="ネットワーク" Tag="Network" />
                 <ListBoxItem Content="通知" Tag="Notifications" />
                 <ListBoxItem Content="動作" Tag="Behavior" />
+                <ListBoxItem Content="ダウンロード" Tag="Download" />
             </ListBox>
 
             <!-- Page content -->

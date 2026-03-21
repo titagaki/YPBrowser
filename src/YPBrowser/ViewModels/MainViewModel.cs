@@ -19,6 +19,8 @@ public partial class MainViewModel : ObservableObject
     private readonly IPlayerLaunchService _playerService;
     private readonly ISettingsService _settings;
     private readonly IChannelFilterService _filterService;
+    private readonly IRecordService _recordService;
+    private readonly IAutoDownloadMatchService _autoDownloadService;
     private Dispatcher? _dispatcher;
 
     // Full merged channel list (all YPs, including log)
@@ -45,7 +47,9 @@ public partial class MainViewModel : ObservableObject
         INotificationService notificationService,
         IPlayerLaunchService playerService,
         ISettingsService settings,
-        IChannelFilterService filterService)
+        IChannelFilterService filterService,
+        IRecordService recordService,
+        IAutoDownloadMatchService autoDownloadService)
     {
         _refreshService = refreshService;
         _diffService = diffService;
@@ -54,6 +58,8 @@ public partial class MainViewModel : ObservableObject
         _playerService = playerService;
         _settings = settings;
         _filterService = filterService;
+        _recordService = recordService;
+        _autoDownloadService = autoDownloadService;
 
         _refreshService.RefreshStarted += OnRefreshStarted;
         _refreshService.RefreshCompleted += OnRefreshCompleted;
@@ -88,12 +94,24 @@ public partial class MainViewModel : ObservableObject
             var newList = e.Channels.ToList();
             var favorites = FavoriteSettingsMapper.ToFavoriteItems(_settings.Current.Favorites);
 
+            bool isFirstFetch = _allChannels.Count == 0;
+
             _diffService.ApplyDiff(_allChannels, newList);
             _favoriteService.MatchAll(newList, favorites);
 
             var newFavs = _favoriteService.GetNewFavoriteChannels(newList);
             if (_settings.Current.Behavior.NotifyOnFavorite && newFavs.Count > 0)
                 _notificationService.NotifyNewFavorites(newFavs);
+
+            if (!isFirstFetch && !string.IsNullOrWhiteSpace(_settings.Current.Downloader.ExecutablePath))
+            {
+                var rules = Helpers.AutoDownloadSettingsMapper.ToRuleItems(_settings.Current.AutoDownloadRules);
+                if (rules.Count > 0)
+                {
+                    foreach (var ch in _autoDownloadService.GetChannelsToAutoDownload(newList, rules))
+                        _recordService.Record(ch, _settings.Current.Downloader);
+                }
+            }
 
             _allChannels.Clear();
             _allChannels.AddRange(newList);
@@ -203,6 +221,19 @@ public partial class MainViewModel : ObservableObject
         var favorites = Helpers.FavoriteSettingsMapper.ToFavoriteItems(_settings.Current.Favorites);
         _favoriteService.MatchAll(_allChannels, favorites);
         ApplyFilter();
+    }
+
+    [RelayCommand]
+    private void StartRecord(ChannelItem? channel)
+    {
+        if (channel == null) return;
+        var dl = _settings.Current.Downloader;
+        if (string.IsNullOrWhiteSpace(dl.ExecutablePath))
+        {
+            StatusText = "録音ツールが設定されていません。設定 > ダウンロード を確認してください。";
+            return;
+        }
+        _recordService.Record(channel, dl);
     }
 
     [RelayCommand]

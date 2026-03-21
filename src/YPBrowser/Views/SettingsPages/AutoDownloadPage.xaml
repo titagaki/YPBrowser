@@ -1,0 +1,107 @@
+<UserControl
+    x:Class="YPBrowser.Views.SettingsPages.AutoDownloadPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,16">
+
+            <!-- Section 1: ダウンロードツール設定 -->
+            <TextBlock Text="ダウンロードツール" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="実行ファイル" VerticalAlignment="Center"/>
+                <TextBox   Grid.Row="0" Grid.Column="1" x:Name="ExeBox"
+                           TextChanged="ExeBox_TextChanged" Margin="0,0,4,4"/>
+                <Button    Grid.Row="0" Grid.Column="2" Content="参照" Click="BrowseExe_Click"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="保存フォルダ" VerticalAlignment="Center"/>
+                <TextBox   Grid.Row="1" Grid.Column="1" x:Name="OutDirBox"
+                           TextChanged="OutDirBox_TextChanged" Margin="0,0,4,4"/>
+                <Button    Grid.Row="1" Grid.Column="2" Content="参照" Click="BrowseDir_Click"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="引数テンプレート" VerticalAlignment="Center"/>
+                <TextBox   Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="ArgsBox"
+                           TextChanged="ArgsBox_TextChanged" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="ファイル名" VerticalAlignment="Center"/>
+                <TextBox   Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" x:Name="FilenameBox"
+                           TextChanged="FilenameBox_TextChanged" Margin="0,0,0,4"/>
+            </Grid>
+            <TextBlock FontSize="11" Opacity="0.6" Margin="0,2,0,0"
+                       Text="{}{url} {outputDir} {filename} {channelName} {timestamp} が使用できます。" />
+
+            <Rectangle Height="1" Fill="#DDDDDD" Margin="0,12,0,12" />
+
+            <!-- Section 2: 自動ダウンロードルール -->
+            <TextBlock Text="自動ダウンロードルール" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <TextBlock FontSize="11" Opacity="0.6" Margin="0,0,0,8"
+                       Text="新着チャンネルが条件に一致した場合、自動的に録音/録画を開始します。" />
+
+            <ListBox x:Name="RuleList" Height="160"
+                     ItemsSource="{Binding Rules}"
+                     SelectedItem="{Binding SelectedRule, Mode=TwoWay}"
+                     BorderThickness="1"
+                     SelectionChanged="RuleList_SelectionChanged">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <DockPanel Margin="2,3">
+                            <CheckBox DockPanel.Dock="Left"
+                                      IsChecked="{Binding Enabled, Mode=TwoWay}"
+                                      VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding Title}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
+                <Button Content="追加" Command="{Binding AddRuleCommand}"    Margin="0,0,4,0"/>
+                <Button Content="削除" Command="{Binding RemoveRuleCommand}" Margin="0,0,4,0"/>
+                <Button Content="↑"   Command="{Binding MoveRuleUpCommand}" Margin="0,0,4,0"/>
+                <Button Content="↓"   Command="{Binding MoveRuleDownCommand}"/>
+            </StackPanel>
+
+            <!-- ルール編集フォーム -->
+            <StackPanel IsEnabled="{Binding HasSelectedRule}">
+                <TextBlock Text="編集" FontWeight="SemiBold" Margin="0,0,0,8" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="80" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="タイトル" VerticalAlignment="Center"/>
+                    <TextBox   Grid.Row="0" Grid.Column="1" x:Name="RuleTitleBox"
+                               TextChanged="RuleTitleBox_TextChanged" Margin="0,0,0,4"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="検索語" VerticalAlignment="Center"/>
+                    <TextBox   Grid.Row="1" Grid.Column="1" x:Name="RuleWordBox"
+                               TextChanged="RuleWordBox_TextChanged" Margin="0,0,0,4"/>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="正規表現" VerticalAlignment="Center"/>
+                    <CheckBox  Grid.Row="2" Grid.Column="1" x:Name="RuleRegexCheck"
+                               Content="正規表現を使用する"
+                               Click="RuleRegexCheck_Click"/>
+                </Grid>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -32,6 +32,7 @@ public partial class SettingsDialog : Window
             "Network" => new NetworkPage(_settings),
             "Notifications" => new NotificationsPage(_settings),
             "Behavior" => new BehaviorPage(_settings),
+            "Download" => new AutoDownloadPage(_viewModel.AutoDownload),
             _ => null,
         };
     }
