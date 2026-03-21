@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using YPBrowser.Abstractions;
 using YPBrowser.Models;
@@ -70,15 +71,20 @@ public class RecordService : IRecordService
 
     public bool IsRecording(string channelId) => _active.ContainsKey(channelId);
 
-    private async Task DownloadAsync(string url, string filePath, string channelId, CancellationToken ct)
+    private async Task DownloadAsync(string initialUrl, string filePath, string channelId, CancellationToken ct)
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
             var client = _httpClientFactory.CreateClient("RecordService");
 
-            using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+            // PeerCast の /pls/ エンドポイントは PLS テキストを返す場合がある。
+            // PLS/M3U を検出してストリーム URL に解決する。
+            var streamUrl = await ResolveStreamUrlAsync(client, initialUrl, ct);
+            _logger.LogInformation("Resolved stream URL: {Url}", streamUrl);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+
+            using var response = await client.GetAsync(streamUrl, HttpCompletionOption.ResponseHeadersRead, ct);
             response.EnsureSuccessStatusCode();
 
             await using var fileStream = new FileStream(
@@ -99,10 +105,74 @@ public class RecordService : IRecordService
         }
         finally
         {
-            // Clean up CTS if it's still in the dict (not removed by StopRecording)
             if (_active.TryRemove(channelId, out var cts))
                 cts.Dispose();
         }
+    }
+
+    /// <summary>
+    /// PLS/M3U ファイルを取得・パースして実際のストリーム URL を返す。
+    /// プレイリストでない場合は initialUrl をそのまま返す。
+    /// </summary>
+    private async Task<string> ResolveStreamUrlAsync(HttpClient client, string initialUrl, CancellationToken ct)
+    {
+        // ヘッダーを含めた全体を読む（PLS は数百バイト）
+        using var response = await client.GetAsync(initialUrl, ct);
+        if (!response.IsSuccessStatusCode)
+            return initialUrl;
+
+        var content = await response.Content.ReadAsStringAsync(ct);
+
+        // PLS フォーマット判定
+        if (content.Contains("[playlist]", StringComparison.OrdinalIgnoreCase))
+        {
+            var resolved = ParsePlsUrl(content);
+            if (resolved != null && resolved != initialUrl)
+            {
+                _logger.LogDebug("PLS resolved: {Url}", resolved);
+                return resolved;
+            }
+        }
+
+        // M3U フォーマット判定
+        if (content.StartsWith("#EXTM3U", StringComparison.OrdinalIgnoreCase) ||
+            content.StartsWith("#EXT-X-", StringComparison.OrdinalIgnoreCase))
+        {
+            var resolved = ParseM3uUrl(content);
+            if (resolved != null && resolved != initialUrl)
+            {
+                _logger.LogDebug("M3U resolved: {Url}", resolved);
+                return resolved;
+            }
+        }
+
+        // プレイリストでなければそのまま
+        return initialUrl;
+    }
+
+    private static string? ParsePlsUrl(string content)
+    {
+        foreach (var line in content.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (trimmed.StartsWith("File1=", StringComparison.OrdinalIgnoreCase))
+            {
+                var url = trimmed[6..].Trim();
+                return string.IsNullOrEmpty(url) ? null : url;
+            }
+        }
+        return null;
+    }
+
+    private static string? ParseM3uUrl(string content)
+    {
+        foreach (var line in content.Split('\n'))
+        {
+            var trimmed = line.Trim();
+            if (!trimmed.StartsWith('#') && !string.IsNullOrEmpty(trimmed))
+                return trimmed;
+        }
+        return null;
     }
 
     private static string ResolveOutputDirectory(string raw)

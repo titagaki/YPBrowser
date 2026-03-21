@@ -31,17 +31,6 @@ dotnet build YPBrowser.sln -p:Platform=x64
 - **通知**: Windows トースト (`Windows.UI.Notifications`)
 - **プレイヤー**: 外部プレイヤーをURL/プレイリストで起動 (`Process.Start`)
 
-## YP データ形式
-
-`index.txt` の各行を `<>` で分割した19フィールド:
-```
-チャンネル名<>ID<>Host:Port<>ContactURL<>ジャンル<>説明<>視聴者数<>リレー数
-<>Kbps<>コーデック<>アーティスト<>アルバム<>曲名<>曲ジャンル<>URLParam
-<>放送時間<>きゃすこステータス<>コメント<>isDirect(0/1)
-```
-
-実装参照: `_ref/pcypLite/upcypNet.pas` の `ParseTxt` メソッド
-
 ## 主要クラス
 
 | クラス | 役割 |
@@ -53,9 +42,11 @@ dotnet build YPBrowser.sln -p:Platform=x64
 | `MainViewModel` | UI オーケストレーター |
 | `SettingsService` | JSON 設定の読み書き |
 
+## ドキュメント
+
+設計背景・落とし穴・類似概念の使い分けは [`docs/README.md`](docs/README.md) を参照。
+YP データ形式（19フィールド仕様・パース・フィルタリング）は [`docs/yp-data-format.md`](docs/yp-data-format.md) を参照。
+
 ## 注意事項
 
 - `[ObservableProperty]` フィールドに MVVMTK0045 警告が多数出るが、アンパッケージドWinUI 3では問題なし
-- XAML のルート要素は `<Window>` (WindowEx は C# 側だけで継承)
-- 設定ダイアログは別 `Window` として実装 (ContentDialog では狭いため)
-- YPサーバーの最小フェッチ間隔: 4分/サーバー (AutoRefreshService)
