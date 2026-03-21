@@ -13,8 +13,8 @@ public partial class PlayersPage : UserControl
     public PlayersPage(SettingsViewModel viewModel)
     {
         ViewModel = viewModel;
-        DataContext = viewModel;
         InitializeComponent();
+        DataContext = viewModel;
     }
 
     private void PlayerList_SelectionChanged(object sender, SelectionChangedEventArgs e)

@@ -91,9 +91,27 @@ public partial class MainWindow : Window
         catch { }
     }
 
-    private void Refresh_Click(object sender, RoutedEventArgs e)
+    private void OpenStats_Click(object sender, RoutedEventArgs e)
     {
-        _ = ViewModel.RefreshCommand.ExecuteAsync(null);
+        var ch = ViewModel.SelectedChannel;
+        if (ch == null || string.IsNullOrEmpty(ch.StatsUrl)) return;
+        try { Process.Start(new ProcessStartInfo(ch.StatsUrl) { UseShellExecute = true }); }
+        catch { }
+    }
+
+    private void AddFavorite_Click(object sender, RoutedEventArgs e)
+    {
+        _ = ViewModel.AddFavoriteCommand.ExecuteAsync(ViewModel.SelectedChannel);
+    }
+
+    private void RemoveFavorite_Click(object sender, RoutedEventArgs e)
+    {
+        _ = ViewModel.RemoveFavoriteCommand.ExecuteAsync(ViewModel.SelectedChannel);
+    }
+
+    private void CopyChannelDetail_Click(object sender, RoutedEventArgs e)
+    {
+        ViewModel.CopyChannelDetailCommand.Execute(ViewModel.SelectedChannel);
     }
 
     private void OpenSettings_Click(object sender, RoutedEventArgs e)

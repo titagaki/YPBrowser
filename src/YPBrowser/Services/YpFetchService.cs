@@ -28,8 +28,10 @@ public class YpFetchService : IYpFetchService
 
         try
         {
-            _httpClient.Timeout = TimeSpan.FromSeconds(Math.Max(5, network.TimeoutSeconds));
-            var response = await _httpClient.GetAsync(url, ct);
+            var timeoutSec = Math.Max(5, network.TimeoutSeconds);
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(timeoutSec));
+            var response = await _httpClient.GetAsync(url, timeoutCts.Token);
             response.EnsureSuccessStatusCode();
 
             var bytes = await response.Content.ReadAsByteArrayAsync(ct);
@@ -104,6 +106,7 @@ public class YpFetchService : IYpFetchService
                 IsDirect = GetField(fields, 18) == "1",
                 YpName = server.Name,
                 YpUrl = server.Url.TrimEnd('/') + "/",
+                YpHost = server.Host,
                 FetchedAt = DateTime.Now,
                 YpPriority = 0,
             };

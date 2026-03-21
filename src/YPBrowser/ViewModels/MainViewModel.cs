@@ -161,6 +161,64 @@ public partial class MainViewModel : ObservableObject
         if (channel == null) return;
         Clipboard.SetText(channel.StreamUrl);
     }
+
+    [RelayCommand]
+    private void CopyChannelDetail(ChannelItem? channel)
+    {
+        if (channel == null) return;
+
+        var comment = string.IsNullOrWhiteSpace(channel.Comment)
+            ? ""
+            : $" 「{channel.Comment}」";
+
+        var genreDesc = string.Join(" - ",
+            new[] { channel.Genre, channel.Description }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+        var trackParts = new[] { channel.TrackArtist, channel.TrackAlbum, channel.TrackTitle }
+            .Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"{channel.ChannelName} ({channel.ListenersDisplay}/ {channel.RelaysDisplay})");
+        sb.AppendLine($" [{genreDesc}]{comment}");
+        if (trackParts.Count > 0)
+            sb.AppendLine($" {string.Join(" / ", trackParts)}");
+        sb.Append(channel.ContactUrl);
+
+        Clipboard.SetText(sb.ToString());
+    }
+
+    [RelayCommand]
+    private async Task AddFavorite(ChannelItem? channel)
+    {
+        if (channel == null) return;
+        _settings.Current.Favorites.Add(new Settings.FavoriteSettings
+        {
+            Title = channel.ChannelName,
+            Word = channel.ChannelName,
+            TargetFields = ["ChannelName"],
+            BackColor = "#FFFF99",
+            TextColor = "#000000",
+        });
+        await _settings.SaveAsync();
+        var favorites = Helpers.FavoriteSettingsMapper.ToFavoriteItems(_settings.Current.Favorites);
+        _favoriteService.MatchAll(_allChannels, favorites);
+        ApplyFilter();
+    }
+
+    [RelayCommand]
+    private async Task RemoveFavorite(ChannelItem? channel)
+    {
+        if (channel == null) return;
+        var toRemove = _settings.Current.Favorites
+            .Where(f => !f.IsRegex && f.Word == channel.ChannelName)
+            .ToList();
+        foreach (var f in toRemove)
+            _settings.Current.Favorites.Remove(f);
+        await _settings.SaveAsync();
+        var favorites = Helpers.FavoriteSettingsMapper.ToFavoriteItems(_settings.Current.Favorites);
+        _favoriteService.MatchAll(_allChannels, favorites);
+        ApplyFilter();
+    }
 }
 
 public record OpenChannelWithArgs(ChannelItem? Channel, PlayerItem? Player);

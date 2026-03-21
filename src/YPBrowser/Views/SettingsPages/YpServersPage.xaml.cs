@@ -12,8 +12,8 @@ public partial class YpServersPage : UserControl
     public YpServersPage(SettingsViewModel viewModel)
     {
         ViewModel = viewModel;
-        DataContext = viewModel;
         InitializeComponent();
+        DataContext = viewModel;
         ServerList.SelectionChanged += ServerList_SelectionChanged;
     }
 

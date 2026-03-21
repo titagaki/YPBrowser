@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
 using YPBrowser.Models;
@@ -17,10 +18,10 @@ public class ChannelDiffToColorConverter : IValueConverter
                 ChannelDiff.Up   => new SolidColorBrush(Color.FromArgb(255, 0, 0, 200)),
                 ChannelDiff.Down => new SolidColorBrush(Color.FromArgb(255, 200, 0, 0)),
                 ChannelDiff.Log  => new SolidColorBrush(Color.FromArgb(255, 128, 128, 128)),
-                _                => new SolidColorBrush(Colors.Transparent),
+                _                => DependencyProperty.UnsetValue,
             };
         }
-        return new SolidColorBrush(Colors.Transparent);
+        return DependencyProperty.UnsetValue;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

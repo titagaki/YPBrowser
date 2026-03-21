@@ -12,7 +12,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Yellow Pages サーバー" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
+        <TextBlock Grid.Row="0" Text="YP サーバー" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8" />
 
         <ListBox Grid.Row="1"
                  x:Name="ServerList"
@@ -45,7 +45,7 @@
         </StackPanel>
 
         <!-- Edit form -->
-        <ScrollViewer Grid.Row="3">
+        <ScrollViewer Grid.Row="3" IsEnabled="{Binding HasSelectedYpServer}">
             <StackPanel x:Name="EditPanel">
                 <TextBlock Text="編集" FontWeight="SemiBold" Margin="0,0,0,8" />
                 <Grid>

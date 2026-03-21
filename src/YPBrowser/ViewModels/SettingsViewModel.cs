@@ -15,8 +15,15 @@ public partial class SettingsViewModel : ObservableObject
     public ObservableCollection<YpServerSettings> YpServers { get; } = [];
     public ObservableCollection<PlayerSettings> Players { get; } = [];
 
-    [ObservableProperty] private YpServerSettings? _selectedYpServer;
-    [ObservableProperty] private PlayerSettings? _selectedPlayer;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedYpServer))]
+    private YpServerSettings? _selectedYpServer;
+    public bool HasSelectedYpServer => SelectedYpServer != null;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedPlayer))]
+    private PlayerSettings? _selectedPlayer;
+    public bool HasSelectedPlayer => SelectedPlayer != null;
 
     public SettingsViewModel(ISettingsService settings)
     {

@@ -13,6 +13,28 @@
             <conv:ChannelDiffToColorConverter x:Key="DiffToColor" />
             <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
             <conv:IntToStringConverter x:Key="IntToStr" />
+            <!-- 縦の点線セパレータ用ブラシ (1px幅のRectangleのFillに使用) -->
+            <DrawingBrush x:Key="DashedVSepBrush" TileMode="Tile"
+                          Viewport="0,0,1,6" ViewportUnits="Absolute" Stretch="None">
+                <DrawingBrush.Drawing>
+                    <GeometryDrawing Brush="#BBBBBB">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="0,0,1,3"/>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingBrush.Drawing>
+            </DrawingBrush>
+            <!-- 横の点線セパレータ用ブラシ (1px高のRectangleのFillに使用) -->
+            <DrawingBrush x:Key="DashedHSepBrush" TileMode="Tile"
+                          Viewport="0,0,6,1" ViewportUnits="Absolute" Stretch="None">
+                <DrawingBrush.Drawing>
+                    <GeometryDrawing Brush="#CCCCCC">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry Rect="0,0,3,1"/>
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingBrush.Drawing>
+            </DrawingBrush>
         </Grid.Resources>
 
         <Grid.RowDefinitions>
@@ -58,26 +80,26 @@
 
             <!-- Channel list -->
             <DockPanel Grid.Row="0">
-                <!-- Column header (left pad=6 matches ListBoxItem padding below) -->
+                <!-- Column header -->
                 <Border DockPanel.Dock="Top" Padding="6,3,6,3"
                         Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
                         BorderThickness="0,0,0,1" BorderBrush="#CCCCCC">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" MinWidth="120" />
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="60" />
-                            <ColumnDefinition Width="50" />
-                            <ColumnDefinition Width="50" />
-                            <ColumnDefinition Width="60" />
+                            <ColumnDefinition Width="1" />
+                            <ColumnDefinition Width="75" />
+                            <ColumnDefinition Width="1" />
+                            <ColumnDefinition Width="65" />
                             <ColumnDefinition Width="17" /><!-- scrollbar gutter -->
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="チャンネル名" FontWeight="SemiBold" FontSize="12" />
-                        <TextBlock Grid.Column="1" Text="ジャンル" FontWeight="SemiBold" FontSize="12" />
-                        <TextBlock Grid.Column="2" Text="Kbps" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Right"/>
-                        <TextBlock Grid.Column="3" Text="視聴" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Right"/>
-                        <TextBlock Grid.Column="4" Text="リレー" FontWeight="SemiBold" FontSize="12" HorizontalAlignment="Right"/>
-                        <TextBlock Grid.Column="5" Text="コーデック" FontWeight="SemiBold" FontSize="12" />
+                        <Rectangle Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
+                        <TextBlock Grid.Column="2" Text="視聴/リレー" FontWeight="SemiBold" FontSize="12"
+                                   HorizontalAlignment="Right" Margin="4,0"/>
+                        <Rectangle Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
+                        <TextBlock Grid.Column="4" Text="ビットレート" FontWeight="SemiBold" FontSize="12"
+                                   Margin="6,0,0,0"/>
                     </Grid>
                 </Border>
 
@@ -94,40 +116,74 @@
                          HorizontalContentAlignment="Stretch">
                     <ListBox.ItemContainerStyle>
                         <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="6,2" />
+                            <Setter Property="Padding" Value="6,0" />
+                            <Setter Property="Background" Value="{Binding FavBackColor, Converter={StaticResource ColorToBrush}}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Diff}" Value="Log">
+                                    <Setter Property="Background" Value="#EFEFEF" />
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="1" />
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" MinWidth="120" />
-                                    <ColumnDefinition Width="120" />
-                                    <ColumnDefinition Width="60" />
-                                    <ColumnDefinition Width="50" />
-                                    <ColumnDefinition Width="50" />
-                                    <ColumnDefinition Width="60" />
+                                    <ColumnDefinition Width="1" />
+                                    <ColumnDefinition Width="75" />
+                                    <ColumnDefinition Width="1" />
+                                    <ColumnDefinition Width="65" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding ChannelName}"
-                                           TextTrimming="CharacterEllipsis"
-                                           ToolTip="{Binding ChannelName}" />
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding Genre}"
-                                           TextTrimming="CharacterEllipsis"
-                                           Foreground="#555555" FontSize="12" />
-                                <TextBlock Grid.Column="2"
-                                           Text="{Binding BitrateDisplay}"
-                                           HorizontalAlignment="Right" FontSize="12" />
-                                <TextBlock Grid.Column="3"
-                                           Text="{Binding ListenersDisplay}"
-                                           HorizontalAlignment="Right" FontSize="12" />
-                                <TextBlock Grid.Column="4"
-                                           Text="{Binding RelaysDisplay}"
-                                           HorizontalAlignment="Right" FontSize="12" />
-                                <TextBlock Grid.Column="5"
-                                           Text="{Binding ChannelType}"
-                                           Foreground="#555555" FontSize="12" />
+                                <!-- Channel name + genre/description (2 lines) -->
+                                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,3,4,3">
+                                    <TextBlock Text="{Binding ChannelName}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTip="{Binding ChannelName}"
+                                               Foreground="{Binding Diff, Converter={StaticResource DiffToColor}}"
+                                               FontSize="12" />
+                                    <TextBlock Text="{Binding GenreDescription}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="#777777" FontSize="11">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding GenreDescription}" Value="">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                                <!-- 縦の点線セパレータ -->
+                                <Rectangle Grid.Row="0" Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
+                                <Rectangle Grid.Row="0" Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
+                                <!-- Listeners/Relays + Uptime (2 lines) -->
+                                <StackPanel Grid.Row="0" Grid.Column="2"
+                                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                                            Margin="4,3">
+                                    <TextBlock Text="{Binding ListenersRelaysDisplay}"
+                                               HorizontalAlignment="Right" FontSize="12" />
+                                    <TextBlock Text="{Binding BroadcastTimeStr}"
+                                               HorizontalAlignment="Right" FontSize="11" Foreground="#888888" />
+                                </StackPanel>
+                                <!-- Bitrate / Codec (2 lines) -->
+                                <StackPanel Grid.Row="0" Grid.Column="4"
+                                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                                            Margin="6,3,0,3">
+                                    <TextBlock Text="{Binding BitrateDisplay}"
+                                               HorizontalAlignment="Right" FontSize="12" />
+                                    <TextBlock Text="{Binding ChannelType}"
+                                               HorizontalAlignment="Right" FontSize="11" Foreground="#555555" />
+                                </StackPanel>
+                                <!-- 横の点線セパレータ (行の下端) -->
+                                <Rectangle Grid.Row="1" Grid.ColumnSpan="5"
+                                           Fill="{StaticResource DashedHSepBrush}" />
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -135,10 +191,13 @@
                         <ContextMenu>
                             <MenuItem Header="再生" Click="PlayChannel_Click" />
                             <Separator />
-                            <MenuItem Header="URLをコピー" Click="CopyUrl_Click" />
-                            <MenuItem x:Name="OpenContactMenuItem" Header="連絡先を開く" Click="OpenContact_Click" />
+                            <MenuItem Header="コンタクトURLを開く" Click="OpenContact_Click" />
+                            <MenuItem Header="統計URLを開く" Click="OpenStats_Click" />
                             <Separator />
-                            <MenuItem Header="更新" Click="Refresh_Click" />
+                            <MenuItem Header="お気に入りに追加" Click="AddFavorite_Click" />
+                            <MenuItem Header="お気に入りから削除" Click="RemoveFavorite_Click" />
+                            <MenuItem Header="コピー（チャンネル情報）" Click="CopyChannelDetail_Click" />
+                            <MenuItem Header="コピー（プレイリストURL）" Click="CopyUrl_Click" />
                         </ContextMenu>
                     </ListBox.ContextMenu>
                 </ListBox>
