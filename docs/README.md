@@ -1,31 +1,50 @@
 # YPBrowser ドキュメント
 
-コードを読んでもすぐにはわからない設計背景・落とし穴・概念の使い分けを記録したドキュメント群。
+「何をするか（仕様）」と「なぜそうしたか（設計）」を分けて置く。
 
-## ドキュメント一覧
+| ディレクトリ | 内容 | 書くもの / 書かないもの |
+|---|---|---|
+| [spec/](spec/) | 仕様書 | 実装の事実（値・書式・条件・手順）のみ。理由は書かない |
+| [design/](design/) | 設計ノート | 判断の理由・背景・トレードオフ。仕様の再掲はしない |
+| [investigations/](investigations/) | 未検証の調査 | 事実と仮説を明記して分ける。検証できたら spec / design へ移す |
+
+タスクの進捗は [roadmap.md](roadmap.md) で管理する。
+既知の実装のズレ（未着手）は [investigations/implementation-gaps.md](investigations/implementation-gaps.md) にまとまっている。
+
+## 仕様（spec/）
+
+| ファイル | 範囲 |
+|---|---|
+| [spec/yp-fetch.md](spec/yp-fetch.md) | YP からの取得、index.txt の 19 フィールド、フィルタ、更新サイクル |
+| [spec/channel-diff.md](spec/channel-diff.md) | 差分判定（New/Up/Down/Changed/Log）、ログの保持 |
+| [spec/matching.md](spec/matching.md) | お気に入り・NG・自動ダウンロードのマッチング |
+| [spec/recording.md](spec/recording.md) | 録音、PLS/M3U 解決、再試行、進捗、ファイル名 |
+| [spec/settings.md](spec/settings.md) | 設定の全項目・既定値・適用状況 |
+| [spec/ui.md](spec/ui.md) | 画面構成、表示規則、操作、起動・終了 |
+
+## 設計（design/）
 
 | ファイル | 内容 |
 |---|---|
-| [architecture.md](architecture.md) | アーキテクチャ全体像、サービス一覧、DI 設計の理由 |
-| [channel-lifecycle.md](channel-lifecycle.md) | ChannelDiff の各値の意味、Log チャンネル、初回フェッチ問題、4分インターバル |
-| [concepts.md](concepts.md) | 類似概念の使い分け（FavoriteSettings vs FavoriteItem など） |
-| [yp-data-format.md](yp-data-format.md) | index.txt の 19 フィールド仕様、パース処理、フィルタリング |
-| [recording.md](recording.md) | HTTP ストリーム録音の仕組み、PLS 解決、自動ダウンロードルール |
-| [settings.md](settings.md) | 設定システム、2 段階コミット、_loading フラグパターン |
+| [design/architecture.md](design/architecture.md) | MVVM + DI の理由、レイヤー、ライフタイム |
+| [design/decisions.md](design/decisions.md) | 個別の判断（ログ 1 時間、初回スキップ、録音の自前実装ほか） |
+| [design/concepts.md](design/concepts.md) | 似た型の使い分け（`FavoriteSettings` と `FavoriteItem` など） |
 
 ## よくある疑問への答え
 
 **Q. `FavoriteSettings` と `FavoriteItem` は何が違う？**
-→ [concepts.md](concepts.md#favoritesettings-vs-favoriteitem) 参照。
+→ [design/concepts.md](design/concepts.md#favoritesettings-vs-favoriteitem)
 
 **Q. `StreamUrl` に GET したのに短いファイルしか保存されない**
-→ [recording.md](recording.md#pls-解決が必要な理由) 参照。`/pls/` は PLS テキストを返す。
+→ [spec/recording.md](spec/recording.md#3-ストリーム-url-の解決)。`/pls/` は PLS テキストを返す。
 
 **Q. 起動直後に全チャンネルが「新着」になるのはなぜ？**
-→ [channel-lifecycle.md](channel-lifecycle.md#applyDiff-の呼び出しタイミングと初回フェッチ問題) 参照。
+→ [spec/channel-diff.md](spec/channel-diff.md#初回フェッチ) と
+[design/decisions.md](design/decisions.md#なぜ初回フェッチで自動ダウンロードだけスキップするか)
 
-**Q. 設定ダイアログでキャンセルすると変更が戻らない設定がある**
-→ [settings.md](settings.md#注意-dowloadersettings-は-in-place-変更) 参照。
+**Q. 設定ダイアログでキャンセルしても変更が戻らない設定がある**
+→ [spec/settings.md](spec/settings.md#4-設定ダイアログのキャンセル挙動)
 
-**Q. 手動更新ボタンを押しても YP から取得されない**
-→ [channel-lifecycle.md](channel-lifecycle.md#force-true-フラグ) 参照。`force: true` なら 4 分ガードをスキップ。
+**Q. 設定を変えても表示が変わらない**
+→ 未適用の設定がある。[spec/settings.md](spec/settings.md#3-全設定項目) の「適用」列と
+[investigations/implementation-gaps.md](investigations/implementation-gaps.md) を参照。

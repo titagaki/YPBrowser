@@ -1,4 +1,7 @@
-# 類似概念の使い分けガイド
+# 設計: 類似概念の使い分け
+
+似た名前・似た役割の型がなぜ分かれているかを説明する。
+各型の項目や値そのものは [`docs/spec/`](../spec/) を参照。
 
 ## FavoriteSettings vs FavoriteItem
 
@@ -62,7 +65,7 @@ ChannelItem に IsFavorite / FavBackColor / FavTextColor を設定
 | 経由 | ローカル PeerCast (`localhost:7144`) | 配信元ホストに直接 |
 | パス | `/pls/{Id}?tip={Host}` | `/pls/{Id}` |
 | `Host` が空の場合 | `?tip=` なしで動く | **空文字列**（使用不可） |
-| 使用箇所 | プレイリスト生成・録音・プレイヤー起動 | 現状未使用（予約的） |
+| 使用箇所 | 録音・プレイヤー起動・URL コピー | 現状未使用（予約的） |
 
 ### `?tip=` パラメータの意味
 
@@ -106,7 +109,6 @@ var playerModel = new PlayerItem
     Name             = defaultPlayer.Name,
     ExecutablePath   = defaultPlayer.ExecutablePath,
     ArgumentTemplate = defaultPlayer.ArgumentTemplate,
-    UsePlaylistFile  = defaultPlayer.UsePlaylistFile,
 };
 _playerService.Launch(channel, playerModel);
 ```
@@ -122,7 +124,7 @@ FavoriteSettings → FavoriteItem のような専用 Mapper は存在しない�
 | 複数登録 | はい（リスト） | いいえ（1つだけ） |
 | 外部プロセス起動 | はい | **いいえ**（HttpClient で自前処理） |
 | 実行ファイルパス | あり（`ExecutablePath`） | なし |
-| 引数テンプレート | あり（`{url}`, `{file}`） | なし |
+| 引数テンプレート | あり（`{url}` のみ） | なし |
 | 出力先 | なし | あり（`OutputDirectory`） |
 | ファイル名テンプレート | なし | あり（`FileNameTemplate`） |
 
@@ -181,8 +183,7 @@ JSON が壊れていた場合のサーフェイスとして ChannelName を使�
 
 ### なぜ FavoritesDialog を分けるか
 
-お気に入りルールは設定項目が多く（対象フィールド 9 種・色設定等）、
-`SettingsDialog` に詰め込むと 1 ページが大きくなりすぎるため、独立ダイアログにした。
+[decisions.md](decisions.md#なぜお気に入りを独立ダイアログにしたか) を参照。
 将来的に `SettingsDialog` の「ダウンロード」ページと統合する余地はある。
 
 ---
@@ -197,7 +198,7 @@ JSON が壊れていた場合のサーフェイスとして ChannelName を使�
 | `FavoriteMatchService` | コンパイル済み正規表現キャッシュ |
 | `AutoDownloadMatchService` | コンパイル済み正規表現キャッシュ |
 | `RecordService` | 録音中チャンネルの `CancellationTokenSource` 辞書 |
-| `AutoRefreshService` | 定期タイマー・各 YP の `LastUpdateTime` |
+| `AutoRefreshService` | 定期タイマー |
 
 これらを Transient にすると、状態が毎回リセットされてログが消えたり
 正規表現が毎回コンパイルされたりする問題が起きる。

@@ -1,6 +1,6 @@
 # YPBrowser
 
-PeerCast Yellow Pages ブラウザ。Delphi製 `pcypLite` を C# + WPF で再実装したもの。
+PeerCast Yellow Pages ブラウザ。
 
 ## プロジェクト構造
 
@@ -46,8 +46,19 @@ dotnet build YPBrowser.sln -p:Platform=x64
 
 ## ドキュメント
 
-設計背景・落とし穴・類似概念の使い分けは [`docs/README.md`](docs/README.md) を参照。
-YP データ形式（19フィールド仕様・パース・フィルタリング）は [`docs/yp-data-format.md`](docs/yp-data-format.md) を参照。
+- 仕様（何をするか）: [`docs/spec/`](docs/spec/) — 取得・差分・マッチング・録音・設定・UI
+- 設計理由（なぜそうしたか）: [`docs/design/`](docs/design/)
+- 索引: [`docs/README.md`](docs/README.md)
+
+### ドキュメント運用ルール
+
+- CLAUDE.md には、毎回必ず守るルールだけを書く（目安100行以内）
+- 仕様は `docs/spec/` に、設計理由は `docs/design/` に分けて書く（spec に理由を書かない）
+- Claude への追加指示は `.claude/rules/` に置く
+- 未検証の調査結果は `docs/investigations/` に置き、事実と仮説を明記して分ける。
+  検証済みになったら `docs/` へ昇格し、元ファイルは削除する
+- 新しい文書を作る前に、`docs/` 配下を検索して重複を確認する
+- タスクの進捗状態は `docs/roadmap.md` を更新して管理する
 
 ## 注意事項
 
