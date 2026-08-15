@@ -51,7 +51,7 @@ public partial class App : Application
         // Services (registered against their interfaces)
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IYpFetchService>(sp => sp.GetRequiredService<YpFetchService>());
-        services.AddSingleton<IFavoriteMatchService, FavoriteMatchService>();
+        services.AddSingleton<ITagMatchService, TagMatchService>();
         services.AddSingleton<IChannelDiffService, ChannelDiffService>();
         services.AddSingleton<IChannelFilterService, ChannelFilterService>();
         services.AddSingleton<IAutoRefreshService, AutoRefreshService>();
@@ -63,7 +63,8 @@ public partial class App : Application
         // ViewModels
         services.AddSingleton<MainViewModel>();
         services.AddTransient<SettingsViewModel>();
-        services.AddTransient<FavoritesViewModel>();
+        services.AddTransient<TagsViewModel>();
+        services.AddTransient<RulesViewModel>();
 
         // Windows
         services.AddSingleton<MainWindow>();

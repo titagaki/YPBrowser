@@ -1,0 +1,268 @@
+<Window
+    x:Class="YPBrowser.Views.RulesDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="clr-namespace:YPBrowser.Converters"
+    xmlns:m="clr-namespace:YPBrowser.Models"
+    Title="ルール"
+    Width="820" Height="560"
+    WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <conv:NullableColorToBrushConverter x:Key="ColorToBrush" />
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <conv:NullToBoolConverter x:Key="NullToBool" />
+
+        <!-- タグのチップ。色が無いタグはグレーで出す -->
+        <DataTemplate x:Key="TagChipTemplate">
+            <Border Margin="0,0,3,0" Padding="5,0" CornerRadius="3"
+                    Background="{Binding BackColorValue, Converter={StaticResource ColorToBrush}, ConverterParameter=#F0F0F0}">
+                <TextBlock Text="{Binding Name}" FontSize="11"
+                           Foreground="{Binding ForeColorValue, Converter={StaticResource ColorToBrush}, ConverterParameter=#616161}" />
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- 左: ルール一覧 -->
+        <Grid Grid.Row="0" Grid.Column="0" Margin="0,0,12,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
+                <Button Content="追加" Command="{Binding AddRuleCommand}" Padding="8,2" Margin="0,0,4,0" />
+                <Button Content="複製" Command="{Binding DuplicateRuleCommand}" Padding="8,2" Margin="0,0,4,0" />
+                <Button Content="削除" Command="{Binding RemoveRuleCommand}" Padding="8,2" Margin="0,0,4,0" />
+                <Button Content="↑" Command="{Binding MoveRuleUpCommand}" Padding="8,2" Margin="0,0,4,0" />
+                <Button Content="↓" Command="{Binding MoveRuleDownCommand}" Padding="8,2" />
+            </StackPanel>
+
+            <ListBox Grid.Row="1"
+                     ItemsSource="{Binding Rules}"
+                     SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                     HorizontalContentAlignment="Stretch"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Grid.Column="0" VerticalAlignment="Center" Margin="0,0,5,0"
+                                      IsChecked="{Binding Rule.Enabled, Mode=TwoWay}" />
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="{Binding Rule.Name}" TextTrimming="CharacterEllipsis" />
+                                <!-- 星が自動生成したルールは、手で書いたルールと見分けられるようにする -->
+                                <TextBlock Text="★ 自動生成" FontSize="10" Foreground="#B8860B"
+                                           Visibility="{Binding Rule.IsAuto, Converter={StaticResource BoolToVis}}" />
+                            </StackPanel>
+                            <ItemsControl Grid.Column="2" ItemsSource="{Binding Tags}"
+                                          VerticalAlignment="Center"
+                                          ItemTemplate="{StaticResource TagChipTemplate}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                            <!-- 無効なルールはグレーアウト -->
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Rule.Enabled}" Value="False">
+                                            <Setter Property="Opacity" Value="0.45" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <TextBlock Grid.Row="2" Text="上から順に評価" HorizontalAlignment="Center"
+                       FontSize="11" Foreground="#8A8A8A" Margin="0,4,0,0" />
+        </Grid>
+
+        <!-- 右: 編集フォーム -->
+        <ScrollViewer Grid.Row="0" Grid.Column="1" VerticalScrollBarVisibility="Auto"
+                      IsEnabled="{Binding SelectedRow, Converter={StaticResource NullToBool}}">
+            <StackPanel>
+                <TextBlock Text="ルール名" Foreground="#616161" Margin="0,0,0,3" />
+                <TextBox Text="{Binding SelectedRule.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <!-- 条件 -->
+                <Border BorderThickness="0,1,0,0" BorderBrush="#E5E5E5" Margin="0,10,0,0" Padding="0,10,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                            <TextBlock Text="条件" Foreground="#616161" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <ComboBox Width="130"
+                                      ItemsSource="{x:Static m:RuleOptions.Combinators}"
+                                      DisplayMemberPath="Label" SelectedValuePath="Value"
+                                      SelectedValue="{Binding SelectedRule.Combinator, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding SelectedRule.Conditions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="152" />
+                                            <ColumnDefinition Width="80" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox Grid.Column="0" Margin="0,0,4,0"
+                                                  ItemsSource="{x:Static m:RuleOptions.Fields}"
+                                                  DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                  SelectedValue="{Binding Field, Mode=TwoWay}" />
+                                        <ComboBox Grid.Column="1" Margin="0,0,4,0"
+                                                  ItemsSource="{x:Static m:RuleOptions.Negations}"
+                                                  DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                  SelectedValue="{Binding Negate, Mode=TwoWay}" />
+                                        <ComboBox Grid.Column="2" Margin="0,0,4,0"
+                                                  ItemsSource="{x:Static m:RuleOptions.MatchTypes}"
+                                                  DisplayMemberPath="Label" SelectedValuePath="Value"
+                                                  SelectedValue="{Binding MatchType, Mode=TwoWay}" />
+                                        <TextBox Grid.Column="3" Margin="0,0,4,0"
+                                                 FontFamily="Consolas, Cascadia Mono"
+                                                 Text="{Binding Pattern, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <Button Grid.Column="4" Content="−" Padding="7,0"
+                                                ToolTip="この条件を削除"
+                                                Command="{Binding DataContext.RemoveConditionCommand,
+                                                          RelativeSource={RelativeSource AncestorType=Window}}"
+                                                CommandParameter="{Binding}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- 不正な正規表現はその場で赤字にし、ダイアログは閉じさせない -->
+                        <TextBlock Text="{Binding ValidationError}" Foreground="#C42B1C"
+                                   TextWrapping="Wrap" Margin="0,2,0,4"
+                                   Visibility="{Binding HasValidationError, Converter={StaticResource BoolToVis}}" />
+
+                        <Grid Margin="0,2,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="条件を追加" Padding="8,2"
+                                    Command="{Binding AddConditionCommand}" />
+                            <TextBlock Grid.Column="1" Text="{Binding MatchCountText}"
+                                       Foreground="#0F7B0F" VerticalAlignment="Center" Margin="10,0" />
+                            <Button Grid.Column="2" Content="該当を確認" Padding="8,2"
+                                    Command="{Binding ShowMatchesCommand}" />
+                        </Grid>
+
+                        <!-- 該当行のプレビュー -->
+                        <Border Margin="0,6,0,0" BorderThickness="1" BorderBrush="#E5E5E5"
+                                Visibility="{Binding IsPreviewVisible, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0" Background="#FAFAFA">
+                                    <TextBlock Text="該当する配信" Margin="6,3" FontSize="11" Foreground="#616161" />
+                                    <Button Content="閉じる" HorizontalAlignment="Right" Margin="4,2"
+                                            Padding="6,0" FontSize="11"
+                                            Command="{Binding HideMatchesCommand}" />
+                                </Grid>
+                                <ListBox Grid.Row="1" ItemsSource="{Binding MatchPreview}"
+                                         MaxHeight="150" BorderThickness="0"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         HorizontalContentAlignment="Stretch">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,1">
+                                                <TextBlock Text="{Binding ChannelName}" FontSize="12"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="{Binding GenreDescription}" FontSize="11"
+                                                           Foreground="#777777" TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- 付与するタグ -->
+                <Border BorderThickness="0,1,0,0" BorderBrush="#E5E5E5" Margin="0,10,0,0" Padding="0,10,0,0">
+                    <StackPanel>
+                        <TextBlock Text="付与するタグ" Foreground="#616161" Margin="0,0,0,4" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ItemsControl Grid.Column="0" ItemsSource="{Binding SelectedRow.Tags}"
+                                          VerticalAlignment="Center" Margin="0,0,6,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,4,0" Padding="6,1" CornerRadius="3"
+                                                Background="{Binding BackColorValue, Converter={StaticResource ColorToBrush}, ConverterParameter=#F0F0F0}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Name}" FontSize="11" VerticalAlignment="Center"
+                                                           Foreground="{Binding ForeColorValue, Converter={StaticResource ColorToBrush}, ConverterParameter=#616161}" />
+                                                <Button Content="×" Margin="4,0,0,0" Padding="2,0" FontSize="10"
+                                                        BorderThickness="0" Background="Transparent"
+                                                        Command="{Binding DataContext.RemoveTagCommand,
+                                                                  RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ComboBox Grid.Column="1" x:Name="TagInput" IsEditable="True"
+                                      ItemsSource="{Binding AvailableTags}" DisplayMemberPath="Name"
+                                      KeyDown="TagInput_KeyDown" />
+                            <Button Grid.Column="2" Content="追加" Padding="8,2" Margin="4,0,0,0"
+                                    Click="AddTag_Click" />
+                        </Grid>
+                        <TextBlock Text="色・通知・非表示はタグ側の設定に従う。未知の名前を入れると新しいタグを作る。"
+                                   FontSize="11" Foreground="#8A8A8A" Margin="0,5,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- 打ち切り -->
+                <Border BorderThickness="0,1,0,0" BorderBrush="#E5E5E5" Margin="0,10,0,0" Padding="0,10,0,0">
+                    <StackPanel>
+                        <CheckBox Content="ここで評価を打ち切る"
+                                  IsChecked="{Binding SelectedRule.StopProcessing, Mode=TwoWay}" />
+                        <TextBlock Text="下のルールを適用せず、このタグだけを付ける"
+                                   FontSize="11" Foreground="#8A8A8A" Margin="20,3,0,0" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="OK" Click="OK_Click" Width="80" Margin="0,0,8,0" IsDefault="True" />
+            <Button Content="キャンセル" Click="Cancel_Click" Width="80" IsCancel="True" />
+        </StackPanel>
+    </Grid>
+</Window>

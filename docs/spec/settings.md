@@ -13,6 +13,7 @@
 | シリアライザ | `System.Text.Json` |
 | 整形 | `WriteIndented = true` |
 | プロパティ名 | C# のプロパティ名そのまま（命名ポリシー変換なし） |
+| 列挙型 | 名前で保存（`JsonStringEnumConverter`）。例: `"DefaultAction": "Hidden"` |
 | ファイルが無い場合 | 既定値を使う（このタイミングでは書き込まない） |
 | 読み込みに失敗した場合 | エラーログを出して既定値を使う（例外は投げない） |
 | 保存に失敗した場合 | エラーログを出すだけ（例外は投げない） |
@@ -24,9 +25,11 @@
 | 契機 | 動作 |
 |---|---|
 | メインウィンドウ `Loaded` | `LoadAsync()` → 通知サービス初期化 → 自動更新開始 → ウィンドウサイズ復元 |
+| 旧形式からの移行 | `LoadAsync()` の中で変換できたら即 `SaveAsync()`（途中で落ちても変換をやり直さないため） |
 | 設定ダイアログ「OK」 | YP サーバー・プレイヤー・自動ダウンロードルールの一覧を差し替えて `SaveAsync()` |
-| お気に入りダイアログ「OK」 | お気に入り一覧を差し替えて `SaveAsync()` |
-| 一覧の「お気に入りに追加 / 削除」 | 設定を書き換えて即 `SaveAsync()` → 再マッチ → 表示更新 |
+| ルール編集ダイアログ「OK」 | `Rules` と `Tags` を差し替えて `SaveAsync()` → 再判定 → 表示更新 |
+| タグ設定ダイアログ「OK」 | `Tags` を差し替え、消えたタグの ID をルールから除いて `SaveAsync()` → 再判定 → 表示更新 |
+| 一覧の星のトグル | 自動生成ルールを追加・削除して即 `SaveAsync()` → 再判定 → 表示更新 |
 | メインウィンドウ `Closing` | `Window.Width` / `Height` / `SplitterPosition` を現在値で更新して `SaveAsync()` |
 
 ## 3. 全設定項目
@@ -53,20 +56,56 @@
 | p@YP | `https://p-at.net/index.txt` |
 | 0yp | `https://yayaue.me/yp/index.txt` |
 
-### 3.2 `Favorites[]`（`FavoriteSettings`）
+### 3.2 `Tags[]`（`TagDefinition`）
 
 | キー | 型 | 既定値 | 適用 | 内容 |
 |---|---|---|---|---|
-| `Title` | string | `""` | ✔ | 一覧に表示するルール名 |
-| `Word` | string | `""` | ✔ | 検索語または正規表現。空ならルール自体を無視 |
-| `TargetFields` | string[] | `["ChannelName"]` | ✔ | マッチ対象（[matching.md](matching.md#1-対象フィールド-favoritetargetfields)） |
-| `IsRegex` | bool | `false` | ✔ | true で正規表現 |
-| `IsNG` | bool | `false` | ✔ | true で NG（一覧から除外、NG フィルタでのみ表示） |
-| `NotifyEnabled` | bool | `true` | ✘ | 未適用 |
+| `Id` | string | ランダム 32 桁 | ✔ | 不変。ルールはこれで参照する |
+| `Name` | string | `""` | ✔ | 表示名 |
+| `ForeColor` | string? | `null` | ✔ | 文字色（`#RRGGBB`）。null で指定なし |
+| `BackColor` | string? | `null` | ✔ | 背景色（`#RRGGBB`）。null で指定なし |
+| `DefaultAction` | enum | `Normal` | ✔ | `Normal` / `Highlight` / `Hidden` |
+| `Notify` | bool | `false` | ✔ | 新着時にトーストを出す |
+| `SoundPath` | string? | `null` | ✔ | 通知音の wav。null・空・不在なら既定音 |
+| `BuiltIn` | bool | `false` | ✔ | 削除不可。読み込み時に ID から付け直される |
+
+並び順が**行の色の優先順**（色を持つ最初のタグが勝つ）とビュー欄の並びを決める。
+
+既定値（設定ファイルが無い場合）は組み込みタグ 2 件のみ。
+
+| Id | Name | DefaultAction | Notify | 色 |
+|---|---|---|---|---|
+| `builtin-favorite` | お気に入り | `Highlight` | `true` | 背景 `#FFF4CE` / 文字 `#4A3A00` |
+| `builtin-ng` | NG | `Hidden` | `false` | なし |
+
+### 3.2.1 `Rules[]`（`Rule`）
+
+| キー | 型 | 既定値 | 適用 | 内容 |
+|---|---|---|---|---|
+| `Id` | string | ランダム 32 桁 | ✔ | |
+| `Name` | string | `""` | ✔ | 一覧に表示するルール名 |
 | `Enabled` | bool | `true` | ✔ | false でルールを無視 |
-| `BackColor` | string | `"#FFFF99"` | ✔ | 行の背景色（`#RRGGBB`） |
-| `TextColor` | string | `"#000000"` | ✘ | 設定されるが一覧の描画に使われない |
-| `SoundFile` | string | `""` | ✘ | 未適用 |
+| `Order` | int | `0` | ✔ | 小さいほど先に評価。OK 時に 0 から振り直す |
+| `Combinator` | enum | `And` | ✔ | `And` / `Or` |
+| `Conditions` | `RuleCondition[]` | `[]` | ✔ | 0 件のルールは常に不一致 |
+| `TagIds` | string[] | `[]` | ✔ | 付与するタグ。実在しない ID は無視される |
+| `StopProcessing` | bool | `false` | ✔ | 一致したら以降のルールを評価しない |
+| `IsAuto` | bool | `false` | ✔ | 星ボタンが生成したルール |
+
+`RuleCondition`:
+
+| キー | 型 | 既定値 | 適用 | 内容 |
+|---|---|---|---|---|
+| `Field` | enum | `Description` | ✔ | `ChannelName` / `Description` / `ContactUrl` / `TrackArtist`（[matching.md](matching.md#条件-rulecondition)） |
+| `MatchType` | enum | `Regex` | ✔ | `Contains` / `Exact` / `Regex` |
+| `Negate` | bool | `false` | ✔ | 判定を反転 |
+| `Pattern` | string | `""` | ✔ | 空なら常に不一致 |
+
+### 3.2.2 `Favorites[]`（`FavoriteSettings`・旧形式）
+
+読み込み時に `Tags` / `Rules` へ移行され、移行後は空になって保存ファイルから消える。
+変換規則は [matching.md](matching.md#8-旧お気に入り形式からの移行-settingsmigration)。
+`Rules` がすでに 1 件以上ある場合は取り込まない。
 
 ### 3.3 `Players[]`（`PlayerSettings`）
 
@@ -116,6 +155,7 @@
 
 表示は XAML と `ChannelDiffToColorConverter` の固定値で描画される（[ui.md](ui.md#22-色)）。
 `FontFamily` / `FontSize` / `FavoriteNameColor` / `NewChannelColor` は設定ダイアログで編集・保存できるが反映されない。
+行の色はタグ側の設定で決まる（[matching.md](matching.md#5-表示への反映)）。
 
 ### 3.8 `Notifications`（`NotificationSettings`）
 
@@ -134,8 +174,8 @@
 | `StartMinimized` | bool | `false` | ✘ | 未適用 |
 | `MinimizeToTray` | bool | `true` | ✘ | 未適用（トレイアイコン自体が未実装） |
 | `OpenOnDoubleClick` | bool | `true` | ✘ | 未適用（ダブルクリック再生は常に有効） |
-| `NotifyOnFavorite` | bool | `true` | ✔ | false で新着お気に入り通知を出さない |
-| `ActiveFilterIndex` | int | `0` | ✘ | 未適用。フィルタ選択は保存も復元もされず、起動時は常に「すべて」 |
+| `NotifyOnFavorite` | bool | `true` | ✔ | false で通知タグの新着通知を出さない（タグごとの `Notify` より優先） |
+| `ActiveFilterIndex` | int | `0` | ✘ | 未適用。ビュー選択は保存も復元もされず、起動時は常に「すべて」 |
 
 ### 3.10 `Window`（`WindowSettings`）
 
@@ -158,7 +198,7 @@
 | 上記の**各項目のフィールド編集**（名前・URL など） | 残る（一覧は同じインスタンスを参照しているため in-place で書き換わる） |
 | 表示・ネットワーク・通知・動作・ダウンロード（保存先・ファイル名）ページ | 残る（`AppSettings` の各セクションを直接書き換えるため） |
 
-キャンセルで残った変更は JSON へ即書き込まれないが、その後に保存契機（お気に入り追加・削除、
+キャンセルで残った変更は JSON へ即書き込まれないが、その後に保存契機（星のトグル、
 アプリ終了時）があれば永続化される。
 
 ## 5. 設定 UI の入力反映パターン

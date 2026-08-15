@@ -78,11 +78,11 @@ UI スレッド（`Dispatcher.BeginInvoke`）で実行される。
 ```
 1. isFirstFetch = (_allChannels.Count == 0)      ← リスト更新前に判定
 2. ChannelDiffService.ApplyDiff(_allChannels, newList)
-3. FavoriteMatchService.MatchAll(newList, favorites)
-4. 新着お気に入りを通知        （Behavior.NotifyOnFavorite が true かつ 1 件以上のとき）
+3. TagMatchService.ApplyTags(newList, Rules, Tags)
+4. 通知タグの新着を通知        （Behavior.NotifyOnFavorite が true かつ 1 件以上のとき）
 5. 自動ダウンロード開始        （isFirstFetch が false かつ ルールが 1 件以上のとき）
 6. _allChannels = newList + GetAllLogChannels()
-7. 表示フィルタ適用 → ステータスバー更新
+7. 表示フィルタ適用 → トレイのツールチップ更新
 ```
 
 ### 初回フェッチ
@@ -92,14 +92,14 @@ UI スレッド（`Dispatcher.BeginInvoke`）で実行される。
 | 処理 | 初回フェッチでの動作 |
 |---|---|
 | 自動ダウンロード | スキップする |
-| お気に入り通知 | スキップしない（全新着お気に入りを通知する） |
+| タグの新着通知 | スキップしない（通知タグが付いた全チャンネルを通知する） |
 
 ## 5. `_allChannels` の内容
 
 通常チャンネル（今回取得分）＋ 全 YP のログチャンネルを連結したリスト。
 表示対象の絞り込みは `ChannelFilterService` が行う（[ui.md](ui.md#3-フィルタ)）。
 
-ステータスバーの集計は `Diff != Log` のチャンネルのみを対象とする。
+トレイのツールチップ用の集計は `Diff != Log` のチャンネルのみを対象とする。
 
 ```
 チャンネル数 = Diff != Log の件数

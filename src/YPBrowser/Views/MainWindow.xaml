@@ -5,7 +5,7 @@
     xmlns:conv="clr-namespace:YPBrowser.Converters"
     xmlns:controls="clr-namespace:YPBrowser.Views.Controls"
     Title="YPBrowser"
-    Width="900" Height="600">
+    Width="980" Height="600">
 
     <Grid>
         <Grid.Resources>
@@ -13,6 +13,15 @@
             <conv:ChannelDiffToColorConverter x:Key="DiffToColor" />
             <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
             <conv:IntToStringConverter x:Key="IntToStr" />
+
+            <!-- タグのチップ。色が無いタグはグレーで出す -->
+            <DataTemplate x:Key="TagChipTemplate">
+                <Border Margin="0,0,3,0" Padding="5,0" CornerRadius="3"
+                        Background="{Binding BackColorValue, Converter={StaticResource ColorToBrush}, ConverterParameter=#F0F0F0}">
+                    <TextBlock Text="{Binding Name}" FontSize="10"
+                               Foreground="{Binding ForeColorValue, Converter={StaticResource ColorToBrush}, ConverterParameter=#616161}" />
+                </Border>
+            </DataTemplate>
             <!-- 縦の点線セパレータ用ブラシ (1px幅のRectangleのFillに使用) -->
             <DrawingBrush x:Key="DashedVSepBrush" TileMode="Tile"
                           Viewport="0,0,1,6" ViewportUnits="Absolute" Stretch="None">
@@ -47,7 +56,8 @@
         <!-- Toolbar -->
         <ToolBar Grid.Row="0">
             <Button Content="更新" Command="{Binding RefreshCommand}" Padding="8,3" />
-            <Button Content="お気に入り" Click="OpenFavorites_Click" Padding="8,3" />
+            <Button Content="ルール" Click="OpenRules_Click" Padding="8,3" />
+            <Button Content="タグ" Click="OpenTags_Click" Padding="8,3" />
             <Separator />
             <Button Content="設定" Click="OpenSettings_Click" Padding="8,3" />
             <Separator />
@@ -55,7 +65,7 @@
                          Visibility="{Binding IsRefreshing, Converter={StaticResource BoolToVis}}" />
         </ToolBar>
 
-        <!-- Search + Filter row -->
+        <!-- 絞り込み欄。単純な部分一致で、保存しない一時的なフィルタ -->
         <Grid Grid.Row="1" Margin="6,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -63,11 +73,10 @@
             </Grid.ColumnDefinitions>
             <TextBox Grid.Column="0"
                      Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                     Margin="0,0,6,0" />
-            <ComboBox Grid.Column="1"
-                      ItemsSource="{Binding FilterLabels}"
-                      SelectedIndex="{Binding ActiveFilterIndex, Mode=TwoWay}"
-                      MinWidth="120" />
+                     ToolTip="絞り込み（部分一致）"
+                     Margin="0,0,8,0" />
+            <TextBlock Grid.Column="1" Text="{Binding ResultCountText}"
+                       VerticalAlignment="Center" FontSize="11" Foreground="#8A8A8A" />
         </Grid>
 
         <!-- Tab: チャンネル一覧 / 録画中 -->
@@ -75,34 +84,111 @@
             <!-- チャンネル一覧タブ -->
             <TabItem Header="チャンネル一覧">
                 <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="150" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*" />
                         <RowDefinition Height="5" />
                         <RowDefinition x:Name="DetailRow" Height="150" MinHeight="80" MaxHeight="300" />
                     </Grid.RowDefinitions>
 
+                    <!-- ビュー欄: 組み込みビューの下にタグが自動で並ぶ -->
+                    <Border Grid.Column="0" Grid.RowSpan="3"
+                            BorderThickness="0,0,1,0" BorderBrush="#E5E5E5"
+                            Background="#FAFAFA">
+                        <ListBox ItemsSource="{Binding Views}"
+                                 SelectedItem="{Binding SelectedView, Mode=TwoWay}"
+                                 BorderThickness="0" Background="Transparent"
+                                 HorizontalContentAlignment="Stretch"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" FontSize="11" Foreground="#8A8A8A"
+                                                       Margin="6,7,0,2" />
+                                        </DataTemplate>
+                                    </GroupStyle.HeaderTemplate>
+                                </GroupStyle>
+                            </ListBox.GroupStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <!-- タグの色が付いていれば小さく見せる -->
+                                        <Border Grid.Column="0" Width="8" Height="8" CornerRadius="2"
+                                                Margin="0,0,5,0" VerticalAlignment="Center"
+                                                Background="{Binding Tag.BackColorValue, Converter={StaticResource ColorToBrush}}"
+                                                Visibility="{Binding Tag.HasColor, Converter={StaticResource BoolToVis},
+                                                             FallbackValue=Collapsed}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}"
+                                                   TextTrimming="CharacterEllipsis" FontSize="12" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Count}"
+                                                   FontSize="11" Foreground="#8A8A8A" Margin="4,0,0,0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
                     <!-- Channel list -->
-                    <DockPanel Grid.Row="0">
+                    <DockPanel Grid.Row="0" Grid.Column="1">
                         <!-- Column header -->
                         <Border DockPanel.Dock="Top" Padding="6,3,6,3"
                                 Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
                                 BorderThickness="0,0,0,1" BorderBrush="#CCCCCC">
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="22" /><!-- 星 -->
                                     <ColumnDefinition Width="*" MinWidth="120" />
+                                    <ColumnDefinition Width="1" />
+                                    <ColumnDefinition Width="90" />
                                     <ColumnDefinition Width="1" />
                                     <ColumnDefinition Width="75" />
                                     <ColumnDefinition Width="1" />
                                     <ColumnDefinition Width="65" />
                                     <ColumnDefinition Width="17" /><!-- scrollbar gutter -->
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="チャンネル名" FontWeight="SemiBold" FontSize="12" />
-                                <Rectangle Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
-                                <TextBlock Grid.Column="2" Text="視聴/リレー" FontWeight="SemiBold" FontSize="12"
+                                <TextBlock Grid.Column="1" Text="チャンネル名" FontWeight="SemiBold" FontSize="12" />
+                                <Rectangle Grid.Column="2" Fill="{StaticResource DashedVSepBrush}" />
+                                <TextBlock Grid.Column="3" Text="タグ" FontWeight="SemiBold" FontSize="12"
+                                           Margin="4,0,0,0"/>
+                                <Rectangle Grid.Column="4" Fill="{StaticResource DashedVSepBrush}" />
+                                <TextBlock Grid.Column="5" Text="視聴/リレー" FontWeight="SemiBold" FontSize="12"
                                            HorizontalAlignment="Right" Margin="4,0"/>
-                                <Rectangle Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
-                                <TextBlock Grid.Column="4" Text="ビットレート" FontWeight="SemiBold" FontSize="12"
+                                <Rectangle Grid.Column="6" Fill="{StaticResource DashedVSepBrush}" />
+                                <TextBlock Grid.Column="7" Text="ビットレート" FontWeight="SemiBold" FontSize="12"
                                            Margin="6,0,0,0"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- 非表示件数バー。0 件でも出し続ける:
+                             フィルタで消えた配信と YP に出ていない配信を区別できなくなるため -->
+                        <Border DockPanel.Dock="Bottom" Padding="6,3"
+                                BorderThickness="0,1,0,0" BorderBrush="#E5E5E5"
+                                Background="#FAFAFA">
+                            <Grid>
+                                <TextBlock Text="{Binding HiddenNoticeText}" FontSize="11"
+                                           Foreground="#616161" VerticalAlignment="Center" />
+                                <Button HorizontalAlignment="Right" Padding="8,1" FontSize="11"
+                                        Command="{Binding ToggleShowHiddenCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Content" Value="表示する" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ShowHidden}" Value="True">
+                                                    <Setter Property="Content" Value="隠す" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </Grid>
                         </Border>
 
@@ -120,7 +206,8 @@
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
                                     <Setter Property="Padding" Value="6,0" />
-                                    <Setter Property="Background" Value="{Binding FavBackColor, Converter={StaticResource ColorToBrush}}" />
+                                    <!-- 色は「そのチャンネルが持つタグのうち、色が設定されている最初のもの」 -->
+                                    <Setter Property="Background" Value="{Binding TagBackColor, Converter={StaticResource ColorToBrush}}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Diff}" Value="Log">
                                             <Setter Property="Background" Value="#EFEFEF" />
@@ -136,19 +223,54 @@
                                             <RowDefinition Height="1" />
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22" />
                                             <ColumnDefinition Width="*" MinWidth="120" />
+                                            <ColumnDefinition Width="1" />
+                                            <ColumnDefinition Width="90" />
                                             <ColumnDefinition Width="1" />
                                             <ColumnDefinition Width="75" />
                                             <ColumnDefinition Width="1" />
                                             <ColumnDefinition Width="65" />
                                         </Grid.ColumnDefinitions>
+
+                                        <!-- 星。クリックでお気に入りタグの付け外し -->
+                                        <Button Grid.Row="0" Grid.Column="0"
+                                                Background="Transparent" BorderThickness="0"
+                                                Padding="0" Cursor="Hand"
+                                                VerticalAlignment="Center"
+                                                ToolTip="お気に入り"
+                                                Command="{Binding DataContext.ToggleStarCommand,
+                                                          RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                CommandParameter="{Binding}">
+                                            <TextBlock FontSize="13">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="☆" />
+                                                        <Setter Property="Foreground" Value="#C8C8C8" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                                <Setter Property="Text" Value="★" />
+                                                                <Setter Property="Foreground" Value="#B8860B" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Button>
+
                                         <!-- Channel name + genre/description (2 lines) -->
-                                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,3,4,3">
-                                            <TextBlock Text="{Binding ChannelName}"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       ToolTip="{Binding ChannelName}"
-                                                       Foreground="{Binding Diff, Converter={StaticResource DiffToColor}}"
-                                                       FontSize="12" />
+                                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,3,4,3">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding ChannelName}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding ChannelName}"
+                                                           Foreground="{Binding Diff, Converter={StaticResource DiffToColor}}"
+                                                           FontSize="12" />
+                                                <!-- 新着バッジ -->
+                                                <TextBlock Text="新" FontSize="10" Foreground="#0067C0"
+                                                           Margin="4,0,0,0" VerticalAlignment="Center"
+                                                           Visibility="{Binding IsNew, Converter={StaticResource BoolToVis}}" />
+                                            </StackPanel>
                                             <TextBlock Text="{Binding GenreDescription}"
                                                        TextTrimming="CharacterEllipsis"
                                                        Foreground="#777777" FontSize="11">
@@ -164,10 +286,18 @@
                                             </TextBlock>
                                         </StackPanel>
                                         <!-- 縦の点線セパレータ -->
-                                        <Rectangle Grid.Row="0" Grid.Column="1" Fill="{StaticResource DashedVSepBrush}" />
-                                        <Rectangle Grid.Row="0" Grid.Column="3" Fill="{StaticResource DashedVSepBrush}" />
+                                        <Rectangle Grid.Row="0" Grid.Column="2" Fill="{StaticResource DashedVSepBrush}" />
+                                        <!-- タグのチップ -->
+                                        <ItemsControl Grid.Row="0" Grid.Column="3" ItemsSource="{Binding Tags}"
+                                                      VerticalAlignment="Center" Margin="4,3"
+                                                      ItemTemplate="{StaticResource TagChipTemplate}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                        <Rectangle Grid.Row="0" Grid.Column="4" Fill="{StaticResource DashedVSepBrush}" />
                                         <!-- Listeners/Relays + Uptime (2 lines) -->
-                                        <StackPanel Grid.Row="0" Grid.Column="2"
+                                        <StackPanel Grid.Row="0" Grid.Column="5"
                                                     HorizontalAlignment="Right" VerticalAlignment="Center"
                                                     Margin="4,3">
                                             <TextBlock Text="{Binding ListenersRelaysDisplay}"
@@ -175,8 +305,9 @@
                                             <TextBlock Text="{Binding BroadcastTimeStr}"
                                                        HorizontalAlignment="Right" FontSize="11" Foreground="#888888" />
                                         </StackPanel>
+                                        <Rectangle Grid.Row="0" Grid.Column="6" Fill="{StaticResource DashedVSepBrush}" />
                                         <!-- Bitrate / Codec (2 lines) -->
-                                        <StackPanel Grid.Row="0" Grid.Column="4"
+                                        <StackPanel Grid.Row="0" Grid.Column="7"
                                                     HorizontalAlignment="Right" VerticalAlignment="Center"
                                                     Margin="6,3,0,3">
                                             <TextBlock Text="{Binding BitrateDisplay}"
@@ -185,7 +316,7 @@
                                                        HorizontalAlignment="Right" FontSize="11" Foreground="#555555" />
                                         </StackPanel>
                                         <!-- 横の点線セパレータ (行の下端) -->
-                                        <Rectangle Grid.Row="1" Grid.ColumnSpan="5"
+                                        <Rectangle Grid.Row="1" Grid.ColumnSpan="8"
                                                    Fill="{StaticResource DashedHSepBrush}" />
                                     </Grid>
                                 </DataTemplate>
@@ -197,8 +328,9 @@
                                     <MenuItem Header="コンタクトURLを開く" Click="OpenContact_Click" />
                                     <MenuItem Header="統計URLを開く" Click="OpenStats_Click" />
                                     <Separator />
-                                    <MenuItem Header="お気に入りに追加" Click="AddFavorite_Click" />
-                                    <MenuItem Header="お気に入りから削除" Click="RemoveFavorite_Click" />
+                                    <MenuItem Header="お気に入り（切替）" Click="ToggleStar_Click" />
+                                    <MenuItem Header="この条件でルールを作成..." Click="CreateRuleFromChannel_Click" />
+                                    <Separator />
                                     <MenuItem Header="コピー（チャンネル情報）" Click="CopyChannelDetail_Click" />
                                     <MenuItem Header="コピー（プレイリストURL）" Click="CopyUrl_Click" />
                                     <Separator />
@@ -209,11 +341,11 @@
                     </DockPanel>
 
                     <!-- GridSplitter -->
-                    <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"
+                    <GridSplitter Grid.Row="1" Grid.Column="1" Height="5" HorizontalAlignment="Stretch"
                                   Background="#DDDDDD" ResizeBehavior="PreviousAndNext" />
 
                     <!-- Channel detail panel -->
-                    <controls:ChannelDetailPanel Grid.Row="2" x:Name="DetailPanel"
+                    <controls:ChannelDetailPanel Grid.Row="2" Grid.Column="1" x:Name="DetailPanel"
                                                  BorderThickness="0,1,0,0"
                                                  BorderBrush="#CCCCCC" />
                 </Grid>

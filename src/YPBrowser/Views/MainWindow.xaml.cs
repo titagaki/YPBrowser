@@ -99,14 +99,17 @@ public partial class MainWindow : Window
         catch { }
     }
 
-    private void AddFavorite_Click(object sender, RoutedEventArgs e)
+    private void ToggleStar_Click(object sender, RoutedEventArgs e)
     {
-        _ = ViewModel.AddFavoriteCommand.ExecuteAsync(ViewModel.SelectedChannel);
+        _ = ViewModel.ToggleStarCommand.ExecuteAsync(ViewModel.SelectedChannel);
     }
 
-    private void RemoveFavorite_Click(object sender, RoutedEventArgs e)
+    /// <summary>選択行のジャンル等を初期値に入れた状態でルール編集を開く。</summary>
+    private void CreateRuleFromChannel_Click(object sender, RoutedEventArgs e)
     {
-        _ = ViewModel.RemoveFavoriteCommand.ExecuteAsync(ViewModel.SelectedChannel);
+        var channel = ViewModel.SelectedChannel;
+        if (channel == null) return;
+        OpenRulesDialog(ViewModel.CreateRuleFromChannel(channel));
     }
 
     private void CopyChannelDetail_Click(object sender, RoutedEventArgs e)
@@ -133,11 +136,22 @@ public partial class MainWindow : Window
         settingsWin.ShowDialog();
     }
 
-    private void OpenFavorites_Click(object sender, RoutedEventArgs e)
+    private void OpenRules_Click(object sender, RoutedEventArgs e) => OpenRulesDialog(null);
+
+    private void OpenRulesDialog(Models.Rule? initialRule)
     {
-        var vm = App.Services.GetRequiredService<FavoritesViewModel>();
-        var favWin = new FavoritesDialog(vm, _settings);
-        favWin.Owner = this;
-        favWin.ShowDialog();
+        var vm = App.Services.GetRequiredService<RulesViewModel>();
+        if (initialRule is not null) vm.StartWith(initialRule);
+
+        var dialog = new RulesDialog(vm, ViewModel.LiveChannels) { Owner = this };
+        // ルールを変えたら、次の更新を待たずに一覧へ反映する
+        if (dialog.ShowDialog() == true) ViewModel.ReapplyTags();
+    }
+
+    private void OpenTags_Click(object sender, RoutedEventArgs e)
+    {
+        var vm = App.Services.GetRequiredService<TagsViewModel>();
+        var dialog = new TagsDialog(vm) { Owner = this };
+        if (dialog.ShowDialog() == true) ViewModel.ReapplyTags();
     }
 }

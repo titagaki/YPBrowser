@@ -34,7 +34,7 @@ Abstractions/   ← Service Interface 定義
 |---|---|
 | `IYpFetchService` | 通信とパースを他の関心事から切り離す |
 | `IChannelDiffService` | 差分状態は「前回との比較」の記憶が必要 → Singleton にする必然がある |
-| `IFavoriteMatchService` | 正規表現キャッシュを保持するため Singleton |
+| `ITagMatchService` | 正規表現キャッシュを保持するため Singleton |
 | `IAutoDownloadMatchService` | マッチエンジンは共通だが、色付け（表示）と録音開始（副作用）は責務が別 |
 | `IAutoRefreshService` | タイマーは 1 つだけ動くべき → Singleton |
 | `IChannelFilterService` | 純粋関数に近いが、Interface 化してテストしやすくする |
@@ -55,7 +55,7 @@ Transient  ← ダイアログを開くたびに現在値から作り直した�
 | サービス | 状態 |
 |---|---|
 | `ChannelDiffService` | YP 別のログキャッシュ（1 時間有効） |
-| `FavoriteMatchService` / `AutoDownloadMatchService` | コンパイル済み正規表現キャッシュ |
+| `TagMatchService` / `AutoDownloadMatchService` | コンパイル済み正規表現キャッシュ |
 | `AutoRefreshService` | 定期タイマー |
 | `RecordService` | 録音中チャンネルの CTS 辞書 |
 | `MainViewModel` | メイン画面は 1 つだけ |
@@ -65,7 +65,7 @@ Transient  ← ダイアログを開くたびに現在値から作り直した�
 
 ### Transient の理由
 
-`SettingsViewModel`, `FavoritesViewModel` はダイアログを開くたびに現在の設定を読み直したい。
+`SettingsViewModel`, `RulesViewModel`, `TagsViewModel` はダイアログを開くたびに現在の設定を読み直したい。
 「キャンセルで一覧の編集を捨てる」挙動も、ViewModel 側の `ObservableCollection` にだけ
 追加・削除・並べ替えを溜め、OK 時に `AppSettings` へ差し替えることで実現している。
 
@@ -99,8 +99,8 @@ AutoRefreshService
 MainViewModel.OnRefreshCompleted()
   │
   ├─ ChannelDiffService.ApplyDiff()           ← New/Up/Down/Log を算出
-  ├─ FavoriteMatchService.MatchAll()          ← 色・IsFavorite/IsNG を設定
-  ├─ NotificationService.NotifyNewFavorites() ← 新着お気に入りをトースト
+  ├─ TagMatchService.ApplyTags()              ← ルールを評価してタグを付ける
+  ├─ NotificationService.NotifyTaggedChannels() ← 通知タグの新着をトースト
   ├─ AutoDownloadMatchService → RecordService ← 新着マッチを録音開始
   └─ ChannelFilterService.Filter()            ← 画面に表示する一覧を更新
 ```

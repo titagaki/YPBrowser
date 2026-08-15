@@ -64,8 +64,8 @@ foreach (var serverSettings in servers.Where(s => s.Enabled))
 | `Notifications.BalloonTimeoutSeconds` | 参照箇所が無い（トーストの表示時間は OS 任せ） |
 | `Behavior.StartMinimized` / `MinimizeToTray` | 参照箇所が無い。トレイアイコン自体が未実装 |
 | `Behavior.OpenOnDoubleClick` | 参照箇所が無い。ダブルクリック再生は常に有効 |
-| `Behavior.ActiveFilterIndex` | `MainViewModel.ActiveFilterIndex` と接続されておらず、保存も復元もされない |
-| `Favorites[].NotifyEnabled` / `SoundFile` / `TextColor` | `FavoriteItem` まで運ばれるが、通知・再生・描画のどこでも使われない |
+| `Behavior.ActiveFilterIndex` | ビュー選択と接続されておらず、保存も復元もされない |
+| `Notifications.SoundEnabled` / `SoundFile` | 参照箇所が無い。通知音はタグごとの `SoundPath` が使われる |
 | `Window.X` / `Y` | 保存も復元もされない |
 
 ### 仮説（未確認）
@@ -75,18 +75,17 @@ UI から消すか、実装するかの判断が必要。
 
 ---
 
-## 3. お気に入り編集が即座に反映されない
+## 3. お気に入り編集が即座に反映されない（解消済み・2026-08-15）
 
-### 事実
+### 当時の事実
 
-`FavoritesDialog` の OK は設定を保存するだけで、`FavoriteMatchService.MatchAll()` を呼ばない。
-一覧の色分けが変わるのは次の更新サイクル以降。
+`FavoritesDialog` の OK は設定を保存するだけで、`FavoriteMatchService.MatchAll()` を呼ばなかった。
+一覧の色分けが変わるのは次の更新サイクル以降だった。
 
-一方、一覧の右クリック「お気に入りに追加 / 削除」は保存後に `MatchAll()` と再フィルタを行う。
+### 現状
 
-### 確認すべきこと
-
-ダイアログを閉じた直後に再マッチさせるべきか（意図的な差なのか単純な漏れなのか）。
+タグ方式への作り替えで解消。`RulesDialog` / `TagsDialog` を OK で閉じると
+`MainViewModel.ReapplyTags()` が走り、その場で再判定・ビュー欄の再構築・再フィルタを行う。
 
 ---
 

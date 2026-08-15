@@ -1,0 +1,145 @@
+<Window
+    x:Class="YPBrowser.Views.TagsDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="clr-namespace:YPBrowser.Converters"
+    xmlns:m="clr-namespace:YPBrowser.Models"
+    Title="タグ"
+    Width="760" Height="460"
+    WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <conv:NullableColorToBrushConverter x:Key="ColorToBrush" />
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Column header -->
+        <Border Grid.Row="0" Padding="6,4" BorderThickness="0,0,0,1" BorderBrush="#CCCCCC"
+                Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="150" />
+                    <ColumnDefinition Width="190" />
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="46" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="44" />
+                    <ColumnDefinition Width="17" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="タグ" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="1" Text="見た目" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="2" Text="既定の扱い" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="3" Text="通知" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="通知音" FontWeight="SemiBold" />
+                <TextBlock Grid.Column="5" Text="使用" FontWeight="SemiBold" HorizontalAlignment="Right" />
+            </Grid>
+        </Border>
+
+        <ListBox Grid.Row="1"
+                 ItemsSource="{Binding Tags}"
+                 SelectedItem="{Binding SelectedTag, Mode=TwoWay}"
+                 HorizontalContentAlignment="Stretch"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                 BorderThickness="0,0,0,1" BorderBrush="#CCCCCC">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0,3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="190" />
+                            <ColumnDefinition Width="130" />
+                            <ColumnDefinition Width="46" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="44" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- タグ名（組み込みタグも改名できる。参照は ID なので壊れない） -->
+                        <TextBox Grid.Column="0" Margin="0,0,6,0" VerticalAlignment="Center"
+                                 Text="{Binding Tag.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <!-- 見た目: 実際の行と同じ塗りでプレビューし、隣にピッカーを出す -->
+                        <Grid Grid.Column="1" Margin="0,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Padding="4,2" MinWidth="66"
+                                    BorderThickness="1" BorderBrush="#DDDDDD"
+                                    Background="{Binding Tag.BackColorValue, Converter={StaticResource ColorToBrush}}">
+                                <TextBlock Text="サンプル" FontSize="11"
+                                           Foreground="{Binding Tag.ForeColorValue, Converter={StaticResource ColorToBrush}}" />
+                            </Border>
+                            <Button Grid.Column="1" Content="文字" Padding="4,1" Margin="3,0,0,0"
+                                    ToolTip="文字色を選ぶ"
+                                    Click="PickForeColor_Click" Tag="{Binding Tag}" />
+                            <Button Grid.Column="2" Content="背景" Padding="4,1" Margin="2,0,0,0"
+                                    ToolTip="背景色を選ぶ"
+                                    Click="PickBackColor_Click" Tag="{Binding Tag}" />
+                            <Button Grid.Column="3" Content="×" Padding="4,1" Margin="2,0,0,0"
+                                    ToolTip="色を外す"
+                                    Click="ClearColors_Click" Tag="{Binding Tag}" />
+                        </Grid>
+
+                        <ComboBox Grid.Column="2" Margin="0,0,6,0" VerticalAlignment="Center"
+                                  ItemsSource="{x:Static m:RuleOptions.DefaultActions}"
+                                  DisplayMemberPath="Label"
+                                  SelectedValuePath="Value"
+                                  SelectedValue="{Binding Tag.DefaultAction, Mode=TwoWay}" />
+
+                        <CheckBox Grid.Column="3" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  IsChecked="{Binding Tag.Notify, Mode=TwoWay}" />
+
+                        <Grid Grid.Column="4" Margin="0,0,6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" VerticalAlignment="Center" FontSize="11"
+                                     Text="{Binding Tag.SoundPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="空欄なら既定音" />
+                            <Button Grid.Column="1" Content="..." Padding="6,1" Margin="3,0,0,0"
+                                    Click="PickSound_Click" Tag="{Binding Tag}" />
+                        </Grid>
+
+                        <TextBlock Grid.Column="5" Text="{Binding UsageCount}"
+                                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   Foreground="#888888" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Footer -->
+        <Grid Grid.Row="2" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Button Content="タグを追加" Command="{Binding AddTagCommand}" Padding="8,3" Margin="0,0,4,0" />
+                <Button Content="削除" Command="{Binding RemoveTagCommand}" Padding="8,3" Margin="0,0,4,0"
+                        IsEnabled="{Binding SelectedTag.CanDelete, FallbackValue=False}" />
+                <Button Content="↑" Command="{Binding MoveTagUpCommand}" Padding="8,3" Margin="0,0,4,0"
+                        ToolTip="上にあるタグの色が優先される" />
+                <Button Content="↓" Command="{Binding MoveTagDownCommand}" Padding="8,3" />
+            </StackPanel>
+            <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="12,0"
+                       Foreground="#888888" FontSize="11"
+                       Text="「使用」はそのタグを付けているルールの数。お気に入り / NG は削除できない。" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button Content="OK" Click="OK_Click" Width="80" Margin="0,0,8,0" IsDefault="True" />
+                <Button Content="キャンセル" Click="Cancel_Click" Width="80" IsCancel="True" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

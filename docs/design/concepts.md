@@ -3,58 +3,70 @@
 似た名前・似た役割の型がなぜ分かれているかを説明する。
 各型の項目や値そのものは [`docs/spec/`](../spec/) を参照。
 
-## FavoriteSettings vs FavoriteItem
+## Rule vs TagDefinition
 
-同じ「お気に入りルール」を表すが、用途が違う。
+判定と表示を分けるための 2 つの型。
 
-| | `FavoriteSettings` | `FavoriteItem` |
+| | `Rule` | `TagDefinition` |
 |---|---|---|
-| 場所 | `Settings/` | `Models/` |
-| 基底クラス | 普通の POCO | `ObservableObject` |
-| 用途 | JSON 保存・読み込み | マッチング処理・UI バインディング |
-| `TargetFields` の型 | `List<string>` | `FavoriteTargetFields`（Flags 列挙型） |
-| 生成方法 | 直接 new / JSON デシリアライズ | `FavoriteSettingsMapper.ToFavoriteItems()` で変換 |
+| 責務 | 条件に一致したチャンネルにタグを付ける | 付いたチャンネルをどう見せるか |
+| 持つもの | 条件・結合方法・タグ ID・評価順 | 色・既定の扱い・通知・通知音 |
+| 参照方向 | タグを **ID で** 参照する | ルールを知らない |
 
 ### なぜ分けるか
 
-- `FavoriteSettings` は `System.Text.Json` でそのままシリアライズできる単純な型
-- `FavoriteItem` は `FavoriteTargetFields` Flags 列挙型で高速なビット演算マッチングができる
-- UI バインディング（`ObservableObject`）が必要なのはメモリ上のモデルだけ
+旧実装では 1 件のお気に入りが `条件 + 色 + 通知 + 除外フラグ` を全部抱えていた。
+そのため「通知だけ欲しい」「一時的に NG を見たい」といった要求にルールを増やすしかなく、
+「お気に入りリスト」と「無視リスト」を別実装で二重に持つことになっていた。
+
+分けたことで:
+
+- 「無視リスト」という独立した概念が消える（`NG` タグ + 「既定の扱い = 一覧から隠す」で表現される）
+- 1 つの条件に複数タグを付けられる
+- 「NG を一時的に見る」がビューの切り替えだけで済む
+- タグごとの絞り込みビューが自然に作れるので、色を何色も使い分ける必要がなくなる
+
+### なぜ名前ではなく ID で参照するか
+
+タグ名はリネームされうる。名前で参照していると、改名のたびに全ルールを書き換えるか、
+書き換え漏れでルールが黙って効かなくなる。ID は不変なので、改名しても参照が壊れない。
 
 ### 変換フロー
 
 ```
 [JSON ファイル]
-    ↓ デシリアライズ
-FavoriteSettings（POCO）
-    ↓ FavoriteSettingsMapper.ToFavoriteItems()
-FavoriteItem（ObservableObject）
-    ↓ FavoriteMatchService.MatchAll()
-ChannelItem に IsFavorite / FavBackColor / FavTextColor を設定
+    ↓ デシリアライズ（Rule / TagDefinition をそのまま永続化）
+    ↓ SettingsMigration.Migrate()   ← 旧 Favorites があればここで変換
+Rules + Tags
+    ↓ TagMatchService.ApplyTags()
+ChannelItem.Tags（タグ一覧の並び順）
+    ↓ ChannelItem の派生プロパティ
+IsHidden / IsHighlighted / IsFavorite / TagBackColor / TagForeColor
 ```
+
+旧実装にあった「保存用 POCO ↔ 実行時モデル」の 2 段構え（`FavoriteSettings` ↔ `FavoriteItem`）は
+やめて 1 種類にした。マッパーの往復で項目を落とすバグが出やすいわりに、
+得られるのは Flags 列挙型によるマッチの高速化だけで、チャンネル数が数百では意味がないため。
 
 ---
 
-## AutoDownloadRuleSettings vs FavoriteSettings
+## AutoDownloadRuleSettings vs Rule
 
 どちらも「チャンネルを条件でマッチする」設定だが、目的が違う。
 
-| | `FavoriteSettings` | `AutoDownloadRuleSettings` |
+| | `Rule`（タグ方式） | `AutoDownloadRuleSettings` |
 |---|---|---|
-| マッチ時の動作 | 色付け + 通知 | 録音開始 |
-| NG フラグ | あり（`IsNG`） | なし |
-| 通知フラグ | あり（`NotifyEnabled`） | なし |
-| 表示色 | あり（`BackColor`, `TextColor`） | なし |
-| 管理 UI | FavoritesDialog（独立ウィンドウ） | SettingsDialog 内「ダウンロード」ページ |
-
-ルールのマッチエンジン（テキスト検索・正規表現）は同一ロジック。
-`FavoriteTargetFields` 列挙型を両方で共用している。
+| マッチ時の動作 | タグを付ける（表示は決めない） | 録音開始 |
+| 対象フィールド | 条件ごとに 1 つ（`ConditionField`） | Flags で複数選び、連結して 1 回照合 |
+| 条件の数 | 可変・AND/OR・否定あり | 1 つだけ |
+| 管理 UI | RulesDialog（独立ウィンドウ） | SettingsDialog 内「ダウンロード」ページ |
 
 ### なぜ統合しないか
 
-- お気に入りは「色付けして目立たせる」表示寄りの概念
-- 自動ダウンロードは「特定条件で副作用を起こす」動作寄りの概念
-- 将来的に自動ダウンロードを「停止/上書き」するNG的ルールが必要になる可能性があるため、設計上分離しておく
+- タグは「表示をどう変えるか」の概念で、副作用を持たない
+- 自動ダウンロードは「特定条件で副作用（録音）を起こす」動作寄りの概念
+- 自動ダウンロードをタグ方式に載せるなら「タグが付いたら録音」という別の仕組みが要る。
+  今回の作り替えの対象外なので、旧来のルール形式のまま残してある
 
 ---
 
@@ -113,7 +125,7 @@ var playerModel = new PlayerItem
 _playerService.Launch(channel, playerModel);
 ```
 
-FavoriteSettings → FavoriteItem のような専用 Mapper は存在しない（手動変換）。
+タグ方式の `Rule` / `TagDefinition` と違い、保存用と実行時で型が分かれたまま（手動変換）。
 
 ---
 
@@ -133,13 +145,17 @@ FavoriteSettings → FavoriteItem のような専用 Mapper は存在しない�
 
 ---
 
-## FavoriteTargetFields（Flags 列挙型）
+## MatchTargetFields（Flags 列挙型）
 
-マッチ対象フィールドを表す。`FavoriteItem` と `AutoDownloadRuleItem` の両方で共用。
+自動ダウンロードルールのマッチ対象フィールドを表す。`AutoDownloadRuleItem` だけが使う。
+
+タグ方式のルールは条件ごとに 1 フィールドを選ぶ `ConditionField`（チャンネル名 /
+ジャンル・詳細・コメント / コンタクトURL / Playing の 4 つ）を使う。こちらの 9 種とは別物で、
+YP名・コーデック・曲名はタグ方式の条件では選べない。
 
 ```csharp
 [Flags]
-public enum FavoriteTargetFields
+public enum MatchTargetFields
 {
     None        = 0,
     ChannelName = 1 << 0,   // チャンネル名
@@ -158,11 +174,11 @@ public enum FavoriteTargetFields
 ### JSON との往復変換
 
 設定ファイルでは `List<string>` として保存（例: `["ChannelName", "Genre"]`）。
-読み込み時に `FavoriteSettingsMapper.ParseTargetFields()` で Flags 列挙型に変換する。
+読み込み時に `AutoDownloadSettingsMapper.ParseTargetFields()` で Flags 列挙型に変換する。
 
 ```csharp
 // None（空リスト）の場合は ChannelName に強制フォールバック
-return result == FavoriteTargetFields.None ? FavoriteTargetFields.ChannelName : result;
+return result == MatchTargetFields.None ? MatchTargetFields.ChannelName : result;
 ```
 
 フィールドを1つも選ばない状態は UI 上で許可しておらず、
@@ -170,21 +186,28 @@ JSON が壊れていた場合のサーフェイスとして ChannelName を使�
 
 ---
 
-## SettingsViewModel vs FavoritesViewModel
+## SettingsViewModel vs RulesViewModel vs TagsViewModel
 
-どちらも設定を管理する ViewModel だが、別の UI に対応する。
+どれも設定を管理する ViewModel だが、別の UI に対応する。
 
-| | `SettingsViewModel` | `FavoritesViewModel` |
-|---|---|---|
-| 開く UI | `SettingsDialog` | `FavoritesDialog` |
-| 管理対象 | YP サーバー・プレイヤー・自動ダウンロード | お気に入りルール |
-| DI ライフタイム | Transient | Transient |
-| 保存方式 | `SaveAsync()` で全項目まとめて保存 | `SaveAsync()` で全項目まとめて保存 |
+| | `SettingsViewModel` | `RulesViewModel` | `TagsViewModel` |
+|---|---|---|---|
+| 開く UI | `SettingsDialog` | `RulesDialog` | `TagsDialog` |
+| 管理対象 | YP サーバー・プレイヤー・自動ダウンロード | `Rules`（+ 新規タグ） | `Tags` |
+| DI ライフタイム | Transient | Transient | Transient |
+| 編集対象 | 設定オブジェクトを直接 / 一部は複製 | **複製**（OK でのみ書き戻す） | **複製**（OK でのみ書き戻す） |
 
-### なぜ FavoritesDialog を分けるか
+### なぜルールとタグで複製を編集するか
 
-[decisions.md](decisions.md#なぜお気に入りを独立ダイアログにしたか) を参照。
-将来的に `SettingsDialog` の「ダウンロード」ページと統合する余地はある。
+設定ダイアログはキャンセルしても一部の変更が残る（[spec/settings.md](../spec/settings.md#4-設定ダイアログのキャンセル挙動)）。
+ルールとタグは誤編集の影響が一覧全体に及ぶため、キャンセルで確実に元へ戻せるほうを選んだ。
+
+### なぜルールとタグを別ダイアログにするか
+
+編集の単位が違う。ルールは「条件を書いて試す」作業で、タグは「見た目と扱いを決める」作業。
+1 画面に混ぜると、ルール編集中に色をいじれてしまい、どちらを直しているのか分からなくなる。
+`RulesDialog` からタグを新規作成できるのは、ルールを書いている途中で
+タグ設定へ寄り道させないための例外（名前だけ作り、見た目は後から `TagsDialog` で決める）。
 
 ---
 
@@ -195,7 +218,7 @@ JSON が壊れていた場合のサーフェイスとして ChannelName を使�
 | サービス | 保持する状態 |
 |---|---|
 | `ChannelDiffService` | Log チャンネルのキャッシュ（YP 別、1時間有効） |
-| `FavoriteMatchService` | コンパイル済み正規表現キャッシュ |
+| `TagMatchService` | コンパイル済み正規表現キャッシュ |
 | `AutoDownloadMatchService` | コンパイル済み正規表現キャッシュ |
 | `RecordService` | 録音中チャンネルの `CancellationTokenSource` 辞書 |
 | `AutoRefreshService` | 定期タイマー |

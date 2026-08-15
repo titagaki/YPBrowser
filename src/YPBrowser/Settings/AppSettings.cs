@@ -1,9 +1,23 @@
+using YPBrowser.Models;
+
 namespace YPBrowser.Settings;
 
 public class AppSettings
 {
     public List<YpServerSettings> YpServers { get; set; } = [];
+
+    /// <summary>タグ定義。並び順が行の色を決める優先順になる。</summary>
+    public List<TagDefinition> Tags { get; set; } = [];
+
+    /// <summary>判定ルール。上から順に評価される。</summary>
+    public List<Rule> Rules { get; set; } = [];
+
+    /// <summary>
+    /// 旧「お気に入り」形式。読み込み時に <see cref="Tags"/> / <see cref="Rules"/> へ移行され、
+    /// 移行後は空になる（保存時にファイルから消える）。
+    /// </summary>
     public List<FavoriteSettings> Favorites { get; set; } = [];
+
     public List<PlayerSettings> Players { get; set; } = [];
     public List<AutoDownloadRuleSettings> AutoDownloadRules { get; set; } = [];
     public DownloaderSettings Downloader { get; set; } = new();
@@ -25,6 +39,7 @@ public class YpServerSettings
     public string TypeFilter { get; set; } = ".*";
 }
 
+/// <summary>旧形式のお気に入り1件。移行のためだけに残っている。</summary>
 public class FavoriteSettings
 {
     public string Title { get; set; } = "";

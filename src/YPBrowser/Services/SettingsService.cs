@@ -1,6 +1,9 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using YPBrowser.Abstractions;
+using YPBrowser.Helpers;
+using YPBrowser.Models;
 using YPBrowser.Settings;
 
 namespace YPBrowser.Services;
@@ -15,6 +18,8 @@ public class SettingsService : ISettingsService
     {
         WriteIndented = true,
         PropertyNamingPolicy = null,
+        // タグの既定の扱い・一致方式などを、数値ではなく読める名前で保存する
+        Converters = { new JsonStringEnumConverter() },
     };
 
     private readonly ILogger<SettingsService> _logger;
@@ -35,10 +40,24 @@ public class SettingsService : ISettingsService
                 Current = CreateDefaults();
                 return;
             }
-            await using var fs = File.OpenRead(SettingsPath);
-            var loaded = await JsonSerializer.DeserializeAsync<AppSettings>(fs, JsonOptions);
+
+            AppSettings? loaded;
+            await using (var fs = File.OpenRead(SettingsPath))
+            {
+                loaded = await JsonSerializer.DeserializeAsync<AppSettings>(fs, JsonOptions);
+            }
             Current = loaded ?? CreateDefaults();
             _logger.LogInformation("Settings loaded from {Path}", SettingsPath);
+
+            // 旧「お気に入り」形式からタグ方式への移行。移行できたらすぐ書き戻して、
+            // 途中でクラッシュしても次回また変換し直さないようにする。
+            if (SettingsMigration.Migrate(Current))
+            {
+                _logger.LogInformation(
+                    "Migrated settings to tag model: {Tags} tags, {Rules} rules",
+                    Current.Tags.Count, Current.Rules.Count);
+                await SaveAsync();
+            }
         }
         catch (Exception ex)
         {
@@ -89,6 +108,7 @@ public class SettingsService : ISettingsService
             }
         ],
         Players = [],
-        Favorites = [],
+        Tags = [TagDefinition.CreateFavorite(), TagDefinition.CreateNg()],
+        Rules = [],
     };
 }

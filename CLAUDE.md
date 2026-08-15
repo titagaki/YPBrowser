@@ -37,7 +37,10 @@ dotnet build YPBrowser.sln -p:Platform=x64
 |---|---|
 | `YpFetchService` | HTTP取得 + パース |
 | `ChannelDiffService` | 差分計算 (Up/Down/New/Log) |
-| `FavoriteMatchService` | 正規表現マッチング + 色設定 |
+| `TagMatchService` | ルール評価 → チャンネルへタグ付与 (表示は決めない) |
+| `TagDefinition` / `Rule` | タグ (色・既定の扱い・通知) / 判定ルール (条件 → タグID) |
+| `ChannelFilterService` | ビュー + 絞り込み + 非表示件数 |
+| `SettingsMigration` | 旧 `Favorites` → タグ方式への移行 |
 | `AutoRefreshService` | 定期更新 (PeriodicTimer) |
 | `MainViewModel` | UI オーケストレーター |
 | `SettingsService` | JSON 設定の読み書き |
@@ -63,3 +66,5 @@ dotnet build YPBrowser.sln -p:Platform=x64
 ## 注意事項
 
 - `[ObservableProperty]` フィールドに MVVMTK0045 警告が多数出るが、WPF では問題なし
+- ルールはタグを **ID** で参照する（名前で参照しない。改名で壊れるため）
+- 星が作るルールは必ず `Exact`。`Regex` にするとチャンネル名のメタ文字で誤爆する

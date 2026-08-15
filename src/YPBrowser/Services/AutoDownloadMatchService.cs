@@ -33,18 +33,18 @@ public class AutoDownloadMatchService : IAutoDownloadMatchService
         return text.Contains(rule.Word, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string BuildTargetText(ChannelItem ch, FavoriteTargetFields fields)
+    private static string BuildTargetText(ChannelItem ch, MatchTargetFields fields)
     {
         var parts = new List<string>();
-        if (fields.HasFlag(FavoriteTargetFields.ChannelName)) parts.Add(ch.ChannelName);
-        if (fields.HasFlag(FavoriteTargetFields.Genre))       parts.Add(ch.Genre);
-        if (fields.HasFlag(FavoriteTargetFields.Description)) parts.Add(ch.Description);
-        if (fields.HasFlag(FavoriteTargetFields.Comment))     parts.Add(ch.Comment);
-        if (fields.HasFlag(FavoriteTargetFields.ContactUrl))  parts.Add(ch.ContactUrl);
-        if (fields.HasFlag(FavoriteTargetFields.YpName))      parts.Add(ch.YpName);
-        if (fields.HasFlag(FavoriteTargetFields.ChannelType)) parts.Add(ch.ChannelType);
-        if (fields.HasFlag(FavoriteTargetFields.TrackTitle))  parts.Add(ch.TrackTitle);
-        if (fields.HasFlag(FavoriteTargetFields.TrackArtist)) parts.Add(ch.TrackArtist);
+        if (fields.HasFlag(MatchTargetFields.ChannelName)) parts.Add(ch.ChannelName);
+        if (fields.HasFlag(MatchTargetFields.Genre))       parts.Add(ch.Genre);
+        if (fields.HasFlag(MatchTargetFields.Description)) parts.Add(ch.Description);
+        if (fields.HasFlag(MatchTargetFields.Comment))     parts.Add(ch.Comment);
+        if (fields.HasFlag(MatchTargetFields.ContactUrl))  parts.Add(ch.ContactUrl);
+        if (fields.HasFlag(MatchTargetFields.YpName))      parts.Add(ch.YpName);
+        if (fields.HasFlag(MatchTargetFields.ChannelType)) parts.Add(ch.ChannelType);
+        if (fields.HasFlag(MatchTargetFields.TrackTitle))  parts.Add(ch.TrackTitle);
+        if (fields.HasFlag(MatchTargetFields.TrackArtist)) parts.Add(ch.TrackArtist);
         return string.Join(" ", parts.Where(s => !string.IsNullOrEmpty(s)));
     }
 
