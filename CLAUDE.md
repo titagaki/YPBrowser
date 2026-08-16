@@ -14,15 +14,18 @@ tests/YPBrowser.Tests/  # xUnit テスト (net9.0)
 ## ビルド・テスト
 
 ```bash
-# ビルド (x64)
-dotnet build src/YPBrowser/YPBrowser.csproj -p:Platform=x64
+# ビルド
+dotnet build src/YPBrowser/YPBrowser.csproj
 
 # テスト
 dotnet test tests/YPBrowser.Tests/
 
 # ソリューション全体
-dotnet build YPBrowser.sln -p:Platform=x64
+dotnet build YPBrowser.sln
 ```
+
+`-p:Platform=` は付けない。どちらの csproj も `Platforms` を宣言しておらず、
+渡した値の分だけ `bin/` にディレクトリが増えるだけで、意味のある指定にならない。
 
 ## アーキテクチャ
 
