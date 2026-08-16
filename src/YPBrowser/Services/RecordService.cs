@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using YPBrowser.Abstractions;
 using YPBrowser.Models;
+using YPBrowser.Recording;
 using YPBrowser.Settings;
 
 namespace YPBrowser.Services;
@@ -50,7 +51,8 @@ public class RecordService : IRecordService
 
         var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         var outputDir = ResolveOutputDirectory(settings.OutputDirectory);
-        var filename = BuildFilename(channel, settings.FileNameTemplate, timestamp);
+        var extension = ResolveExtension(channel.ChannelType);
+        var filename = BuildFilename(channel, settings.FileNameTemplate, timestamp) + extension;
         var filePath = Path.Combine(outputDir, filename);
 
         var cts = new CancellationTokenSource();
@@ -69,7 +71,7 @@ public class RecordService : IRecordService
         _logger.LogInformation("Recording started: {Channel} → {File}", channel.ChannelName, filePath);
         RecordingsChanged?.Invoke(this, EventArgs.Empty);
 
-        _ = Task.Run(() => DownloadAsync(channel, filePath, channel.Id, entry, cts.Token));
+        _ = Task.Run(() => DownloadAsync(channel, filePath, extension, channel.Id, entry, cts.Token));
     }
 
     public void StopRecording(string channelId)
@@ -86,7 +88,7 @@ public class RecordService : IRecordService
     public bool IsRecording(string channelId) => _active.ContainsKey(channelId);
 
     private async Task DownloadAsync(
-        ChannelItem channel, string filePath, string channelId,
+        ChannelItem channel, string filePath, string extension, string channelId,
         RecordingEntry entry, CancellationToken ct)
     {
         try
@@ -98,44 +100,62 @@ public class RecordService : IRecordService
                 filePath, FileMode.Create, FileAccess.Write, FileShare.Read,
                 bufferSize: 81920, useAsync: true);
 
-            for (int attempt = 0; attempt <= MaxRetries; attempt++)
+            await using var sink = CreateSink(extension, fileStream);
+
+            try
             {
-                if (attempt > 0)
+                for (int attempt = 0; attempt <= MaxRetries; attempt++)
                 {
-                    _logger.LogWarning("Retry {Attempt}/{Max} for channel {Id}", attempt, MaxRetries, channelId);
-                    entry.RetryCount = attempt;
-                    await Task.Delay(RetryDelay, ct);
+                    if (attempt > 0)
+                    {
+                        _logger.LogWarning("Retry {Attempt}/{Max} for channel {Id}", attempt, MaxRetries, channelId);
+                        entry.RetryCount = attempt;
+                        await Task.Delay(RetryDelay, ct);
+                    }
+
+                    try
+                    {
+                        var streamUrl = await ResolveStreamUrlAsync(client, channel.StreamUrl, ct);
+                        if (attempt == 0)
+                            _logger.LogInformation("Resolved stream URL: {Url}", streamUrl);
+
+                        using var response = await client.GetAsync(
+                            streamUrl, HttpCompletionOption.ResponseHeadersRead, ct);
+                        response.EnsureSuccessStatusCode();
+
+                        await using var networkStream = await response.Content.ReadAsStreamAsync(ct);
+                        sink.BeginSegment();
+                        await CopyWithProgressAsync(networkStream, sink, entry, ct);
+
+                        _logger.LogInformation("Recording completed: {File}", filePath);
+                        return;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        _logger.LogInformation("Recording cancelled: {File}", filePath);
+                        return;
+                    }
+                    catch (Exception ex) when (attempt < MaxRetries)
+                    {
+                        _logger.LogWarning(ex, "Recording interrupted for channel {Id}, will retry in {Delay}s",
+                            channelId, RetryDelay.TotalSeconds);
+                    }
                 }
 
+                _logger.LogError("Recording failed after {Max} retries for channel {Id}", MaxRetries, channelId);
+            }
+            finally
+            {
+                // 停止でキャンセル済みでもメタデータは書き切る
                 try
                 {
-                    var streamUrl = await ResolveStreamUrlAsync(client, channel.StreamUrl, ct);
-                    if (attempt == 0)
-                        _logger.LogInformation("Resolved stream URL: {Url}", streamUrl);
-
-                    using var response = await client.GetAsync(
-                        streamUrl, HttpCompletionOption.ResponseHeadersRead, ct);
-                    response.EnsureSuccessStatusCode();
-
-                    await using var networkStream = await response.Content.ReadAsStreamAsync(ct);
-                    await CopyWithProgressAsync(networkStream, fileStream, entry, ct);
-
-                    _logger.LogInformation("Recording completed: {File}", filePath);
-                    return;
+                    await sink.CompleteAsync(CancellationToken.None);
                 }
-                catch (OperationCanceledException)
+                catch (Exception ex)
                 {
-                    _logger.LogInformation("Recording cancelled: {File}", filePath);
-                    return;
-                }
-                catch (Exception ex) when (attempt < MaxRetries)
-                {
-                    _logger.LogWarning(ex, "Recording interrupted for channel {Id}, will retry in {Delay}s",
-                        channelId, RetryDelay.TotalSeconds);
+                    _logger.LogWarning(ex, "Failed to finalize {File}", filePath);
                 }
             }
-
-            _logger.LogError("Recording failed after {Max} retries for channel {Id}", MaxRetries, channelId);
         }
         finally
         {
@@ -147,14 +167,19 @@ public class RecordService : IRecordService
         }
     }
 
+    private IRecordingSink CreateSink(string extension, Stream output) =>
+        extension.Equals(".flv", StringComparison.OrdinalIgnoreCase)
+            ? new FlvRecordingSink(output, _logger)
+            : new RawRecordingSink(output);
+
     private static async Task CopyWithProgressAsync(
-        Stream source, Stream dest, RecordingEntry entry, CancellationToken ct)
+        Stream source, IRecordingSink sink, RecordingEntry entry, CancellationToken ct)
     {
         var buffer = new byte[81920];
         int read;
         while ((read = await source.ReadAsync(buffer, ct)) > 0)
         {
-            await dest.WriteAsync(buffer.AsMemory(0, read), ct);
+            await sink.WriteAsync(buffer.AsMemory(0, read), ct);
             entry.AddBytes(read); // UI 更新は毎秒 Tick() で行う
         }
     }
@@ -227,15 +252,13 @@ public class RecordService : IRecordService
         return Environment.ExpandEnvironmentVariables(raw);
     }
 
-    private static string BuildFilename(ChannelItem channel, string template, string timestamp)
-    {
-        var name = template
+    private static string BuildFilename(ChannelItem channel, string template, string timestamp) =>
+        template
             .Replace("{channelName}", SanitizeFilename(channel.ChannelName))
             .Replace("{timestamp}",   timestamp);
 
-        var ext = CodecExtensions.TryGetValue(channel.ChannelType ?? "", out var e) ? e : ".ts";
-        return name + ext;
-    }
+    private static string ResolveExtension(string? channelType) =>
+        CodecExtensions.TryGetValue(channelType ?? "", out var e) ? e : ".ts";
 
     private static string SanitizeFilename(string name)
     {

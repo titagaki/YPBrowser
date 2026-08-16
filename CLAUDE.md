@@ -51,6 +51,8 @@ dotnet build YPBrowser.sln -p:Platform=x64
 | `SettingsService` | JSON 設定の読み書き |
 | `RecordService` | HTTP ストリーム保存・PLS/M3U 解決・再試行 (最大10回)・進捗追跡 |
 | `RecordingEntry` | 録画中エントリの実行時状態 (進捗・リトライ数・IsActive) |
+| `IRecordingSink` | 録画データの書き込み先。コンテナ形式ごとの後始末をここに閉じ込める |
+| `FlvRecordingSink` | FLV を単体再生できる形に組み直す (ts を録画開始基準へ・再送ヘッダ除去・onMetaData 差し替え) |
 
 ## ドキュメント
 
