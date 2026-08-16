@@ -23,12 +23,14 @@
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="保存フォルダ" VerticalAlignment="Center"/>
                 <TextBox   Grid.Row="0" Grid.Column="1" x:Name="OutDirBox"
-                           TextChanged="OutDirBox_TextChanged" Margin="0,0,4,4"/>
+                           TextChanged="OutDirBox_TextChanged"
+                           Margin="0,0,4,4"/>
                 <Button    Grid.Row="0" Grid.Column="2" Content="参照" Click="BrowseDir_Click"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="ファイル名" VerticalAlignment="Center"/>
                 <TextBox   Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" x:Name="FilenameBox"
-                           TextChanged="FilenameBox_TextChanged" Margin="0,0,0,4"/>
+                           TextChanged="FilenameBox_TextChanged"
+                           Margin="0,0,0,4"/>
             </Grid>
             <TextBlock FontSize="11" Opacity="0.6" Margin="0,2,0,0"
                        Text="{}{channelName} {timestamp} が使用できます。空欄の場合は Downloads フォルダに保存されます。" />
@@ -80,11 +82,13 @@
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="タイトル" VerticalAlignment="Center"/>
                     <TextBox   Grid.Row="0" Grid.Column="1" x:Name="RuleTitleBox"
-                               TextChanged="RuleTitleBox_TextChanged" Margin="0,0,0,4"/>
+                               TextChanged="RuleTitleBox_TextChanged"
+                               Margin="0,0,0,4"/>
 
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="検索語" VerticalAlignment="Center"/>
                     <TextBox   Grid.Row="1" Grid.Column="1" x:Name="RuleWordBox"
-                               TextChanged="RuleWordBox_TextChanged" Margin="0,0,0,4"/>
+                               TextChanged="RuleWordBox_TextChanged"
+                               Margin="0,0,0,4"/>
 
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="正規表現" VerticalAlignment="Center"/>
                     <CheckBox  Grid.Row="2" Grid.Column="1" x:Name="RuleRegexCheck"

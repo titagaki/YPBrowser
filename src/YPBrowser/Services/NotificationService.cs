@@ -9,10 +9,6 @@ public class NotificationService : INotificationService, IDisposable
     private readonly ISettingsService _settings;
     private readonly ILogger<NotificationService> _logger;
     private bool _disposed;
-    private nint _hwnd;
-
-    public event EventHandler? ShowWindowRequested;
-    public event EventHandler? ExitRequested;
 
     public NotificationService(ISettingsService settings, ILogger<NotificationService> logger)
     {
@@ -23,16 +19,6 @@ public class NotificationService : INotificationService, IDisposable
     public void Initialize()
     {
         _logger.LogInformation("Notification service initialized");
-    }
-
-    public void SetWindowHandle(nint hwnd)
-    {
-        _hwnd = hwnd;
-    }
-
-    public void UpdateTrayTooltip(int channelCount, int totalListeners)
-    {
-        // Future: update tray icon tooltip via Shell_NotifyIcon
     }
 
     public void NotifyTaggedChannels(IReadOnlyList<ChannelItem> channels)

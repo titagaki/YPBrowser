@@ -4,14 +4,21 @@ using YPBrowser.Settings;
 namespace YPBrowser.Helpers;
 
 /// <summary>
-/// 旧「お気に入り」形式（条件 + 色 + 通知 + 除外フラグを1件が全部抱える）から
-/// タグ方式（ルールはタグを付けるだけ / 見た目はタグの属性）への移行。
+/// 旧形式からの移行。
+/// ・旧「お気に入り」形式（条件 + 色 + 通知 + 除外フラグを1件が全部抱える）→ タグ方式
+/// ・旧「動作」ページの設定 → 「全般」ページの設定
 /// </summary>
 public static class SettingsMigration
 {
     /// <summary>
-    /// 組み込みタグの存在を保証し、旧 <see cref="AppSettings.Favorites"/> をタグ + ルールへ変換する。
-    /// 変換したら旧リストは空にする（保存時に設定ファイルから消える）。
+    /// 設定画面が選ばせる自動更新間隔（秒）。<c>0</c> は「更新しない」。
+    /// 並び順がそのまま UI の並び順になる。
+    /// </summary>
+    public static readonly int[] RefreshIntervalPresets = [60, 30, 120, 0];
+
+    /// <summary>
+    /// 組み込みタグの存在を保証し、旧 <see cref="AppSettings.Favorites"/> をタグ + ルールへ変換し、
+    /// 旧「動作」設定を新しい形へ移す。変換したら旧データは消す（保存時に設定ファイルから消える）。
     /// 何か変更したら true。
     /// </summary>
     public static bool Migrate(AppSettings settings)
@@ -31,7 +38,69 @@ public static class SettingsMigration
             changed = true;
         }
 
+        if (MigrateBehavior(settings)) changed = true;
+
         return changed;
+    }
+
+    /// <summary>
+    /// 旧「動作」ページの設定を移す。
+    /// 旧項目は非 null なら「設定ファイルに書かれていた」= 移行対象。移した後は null にして、
+    /// 次回以降の保存でファイルから消えるようにする。
+    /// </summary>
+    private static bool MigrateBehavior(AppSettings settings)
+    {
+        var behavior = settings.Behavior;
+        var changed = false;
+
+        if (behavior.StartMinimized is { } startMinimized)
+        {
+            if (startMinimized) behavior.StartupState = StartupWindowState.Minimized;
+            behavior.StartMinimized = null;
+            changed = true;
+        }
+
+        if (behavior.MinimizeToTray is { } minimizeToTray)
+        {
+            behavior.MinimizeButtonAction = minimizeToTray
+                ? MinimizeButtonAction.MinimizeToTray
+                : MinimizeButtonAction.KeepInTaskbar;
+            behavior.MinimizeToTray = null;
+            changed = true;
+        }
+
+        if (behavior.NotifyOnFavorite is { } notifyOnFavorite)
+        {
+            settings.Notifications.NotifyOnFavorite = notifyOnFavorite;
+            behavior.NotifyOnFavorite = null;
+            changed = true;
+        }
+
+        var rounded = RoundRefreshInterval(behavior.RefreshIntervalSeconds);
+        if (rounded != behavior.RefreshIntervalSeconds)
+        {
+            behavior.RefreshIntervalSeconds = rounded;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// 自由入力だった頃の更新間隔をプリセットへ丸める。
+    /// 正の値は 0（更新しない）へは丸めない。速く更新したかった設定を
+    /// 「更新しない」に化けさせると、ユーザーには故障に見えるため。
+    /// </summary>
+    public static int RoundRefreshInterval(int seconds)
+    {
+        if (seconds <= 0) return 0;
+
+        return RefreshIntervalPresets
+            .Where(preset => preset > 0)
+            .OrderBy(preset => Math.Abs(preset - seconds))
+            // 等距離のときは短い方（更新が止まったように見えない側）を選ぶ
+            .ThenBy(preset => preset)
+            .First();
     }
 
     /// <summary>お気に入り / NG は削除できない組み込みタグ。無ければ先頭側に足す。</summary>

@@ -148,6 +148,15 @@
         <Setter Property="Foreground" Value="#FF3A4048" />
     </Style>
 
+    <!-- 設定カードの右端に置く「⋯」。押すまではボタンに見せない -->
+    <Style x:Key="CardMenuButtonStyle" TargetType="Button" BasedOn="{StaticResource SubtleButtonStyle}">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="MinHeight" Value="26" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{StaticResource Ctl.ForegroundMuted}" />
+    </Style>
+
     <!-- 停止など、戻せない操作用 -->
     <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource FlatButtonStyle}">
         <Setter Property="BorderBrush" Value="{StaticResource Btn.DangerBorder}" />

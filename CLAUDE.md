@@ -30,6 +30,7 @@ dotnet build YPBrowser.sln -p:Platform=x64
 - **DI**: `App.xaml.cs` で `Microsoft.Extensions.DependencyInjection`
 - **設定**: JSON (`%AppData%\YPBrowser\settings.json`)
 - **通知**: Windows トースト (`Windows.UI.Notifications`)
+- **トレイ**: `Shell_NotifyIcon` を直接呼ぶ (WinForms は暗黙 using が WPF と衝突するため使わない)
 - **プレイヤー**: 外部プレイヤーをURL/プレイリストで起動 (`Process.Start`)
 
 ## 主要クラス
@@ -43,6 +44,7 @@ dotnet build YPBrowser.sln -p:Platform=x64
 | `ChannelFilterService` | ビュー + 絞り込み + 非表示件数 |
 | `SettingsMigration` | 旧 `Favorites` → タグ方式への移行 |
 | `AutoRefreshService` | 定期更新 (PeriodicTimer) |
+| `TrayIconService` | トレイ常駐アイコン (`Shell_NotifyIcon` の P/Invoke) |
 | `MainViewModel` | UI オーケストレーター |
 | `SettingsService` | JSON 設定の読み書き |
 | `RecordService` | HTTP ストリーム保存・PLS/M3U 解決・再試行 (最大10回)・進捗追跡 |

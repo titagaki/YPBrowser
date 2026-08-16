@@ -15,6 +15,7 @@ public partial class MainViewModel : ObservableObject
     private readonly IChannelDiffService _diffService;
     private readonly ITagMatchService _tagService;
     private readonly INotificationService _notificationService;
+    private readonly ITrayIconService _trayService;
     private readonly IPlayerLaunchService _playerService;
     private readonly ISettingsService _settings;
     private readonly IChannelFilterService _filterService;
@@ -73,12 +74,14 @@ public partial class MainViewModel : ObservableObject
         ISettingsService settings,
         IChannelFilterService filterService,
         IRecordService recordService,
-        IAutoDownloadMatchService autoDownloadService)
+        IAutoDownloadMatchService autoDownloadService,
+        ITrayIconService trayService)
     {
         _refreshService = refreshService;
         _diffService = diffService;
         _tagService = tagService;
         _notificationService = notificationService;
+        _trayService = trayService;
         _playerService = playerService;
         _settings = settings;
         _filterService = filterService;
@@ -105,10 +108,13 @@ public partial class MainViewModel : ObservableObject
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         timer.Tick += (_, _) =>
         {
-            var remaining = _refreshService.NextRefreshAt - DateTime.Now;
-            NextRefreshText = remaining > TimeSpan.Zero
-                ? $"次回更新: {(int)remaining.TotalSeconds}秒後"
-                : "更新中...";
+            var nextAt = _refreshService.NextRefreshAt;
+            var remaining = nextAt - DateTime.Now;
+            NextRefreshText = nextAt == DateTime.MaxValue
+                ? "自動更新: なし"
+                : remaining > TimeSpan.Zero
+                    ? $"次回更新: {(int)remaining.TotalSeconds}秒後"
+                    : "更新中...";
 
             foreach (var entry in RecordingEntries.ToList())
                 entry.Tick();
@@ -188,7 +194,7 @@ public partial class MainViewModel : ObservableObject
             ApplyTags(newList);
 
             var toNotify = _tagService.GetChannelsToNotify(newList);
-            if (_settings.Current.Behavior.NotifyOnFavorite && toNotify.Count > 0)
+            if (_settings.Current.Notifications.NotifyOnFavorite && toNotify.Count > 0)
                 _notificationService.NotifyTaggedChannels(toNotify);
 
             if (!isFirstFetch)
@@ -249,7 +255,7 @@ public partial class MainViewModel : ObservableObject
         var listeners = _allChannels
             .Where(c => c.Diff != ChannelDiff.Log && c.Listeners > 0)
             .Sum(c => c.Listeners);
-        _notificationService.UpdateTrayTooltip(total, listeners);
+        _trayService.UpdateTooltip(total, listeners);
     }
 
     [RelayCommand]

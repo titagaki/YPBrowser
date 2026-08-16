@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Windows;
 using YPBrowser.Abstractions;
 using YPBrowser.Services;
+using YPBrowser.Settings;
 using YPBrowser.ViewModels;
 using YPBrowser.Views;
 
@@ -18,11 +19,39 @@ public partial class App : Application
         Services = ConfigureServices();
     }
 
-    protected override void OnStartup(StartupEventArgs e)
+    /// <summary>
+    /// 設定はここで読む。「起動時の状態」を見てからでないとウィンドウの出し方を決められないため
+    /// （以前はウィンドウの Loaded で読んでいた）。
+    /// </summary>
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        MainWindow = Services.GetRequiredService<MainWindow>();
-        MainWindow.Show();
+
+        var settings = Services.GetRequiredService<ISettingsService>();
+        await settings.LoadAsync();
+
+        var window = Services.GetRequiredService<MainWindow>();
+        MainWindow = window;
+        window.InitializeApp();
+
+        switch (settings.Current.Behavior.StartupState)
+        {
+            case StartupWindowState.Tray:
+                window.HideToTray();
+                break;
+
+            case StartupWindowState.Minimized:
+                window.WindowState = WindowState.Minimized;
+                window.Show();
+                break;
+
+            default:
+                window.Show();
+                break;
+        }
+
+        // Show() の中で走る最小化までは「起動時の状態」の指示として扱う
+        window.MarkStartupComplete();
     }
 
     private static IServiceProvider ConfigureServices()
@@ -56,6 +85,7 @@ public partial class App : Application
         services.AddSingleton<IChannelFilterService, ChannelFilterService>();
         services.AddSingleton<IAutoRefreshService, AutoRefreshService>();
         services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<ITrayIconService, TrayIconService>();
         services.AddSingleton<IPlayerLaunchService, PlayerLaunchService>();
         services.AddSingleton<IRecordService, RecordService>();
         services.AddSingleton<IAutoDownloadMatchService, AutoDownloadMatchService>();

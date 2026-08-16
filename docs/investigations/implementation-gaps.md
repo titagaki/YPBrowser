@@ -62,8 +62,6 @@ foreach (var serverSettings in servers.Where(s => s.Enabled))
 | `Network.ProxyUrl` | 参照箇所が無い |
 | `Network.UserAgent` | `App.xaml.cs` に同じ文字列がハードコードされている |
 | `Notifications.BalloonTimeoutSeconds` | 参照箇所が無い（トーストの表示時間は OS 任せ） |
-| `Behavior.StartMinimized` / `MinimizeToTray` | 参照箇所が無い。トレイアイコン自体が未実装 |
-| `Behavior.OpenOnDoubleClick` | 参照箇所が無い。ダブルクリック再生は常に有効 |
 | `Behavior.ActiveFilterIndex` | ビュー選択と接続されておらず、保存も復元もされない |
 | `Notifications.SoundEnabled` / `SoundFile` | 参照箇所が無い。通知音はタグごとの `SoundPath` が使われる |
 | `Window.X` / `Y` | 保存も復元もされない |
@@ -89,25 +87,23 @@ UI から消すか、実装するかの判断が必要。
 
 ---
 
-## 4. 設定ダイアログのキャンセルが一部しか効かない
+## 4. 設定ダイアログのキャンセルが一部しか効かない（解消済み・2026-08-16）
 
-### 事実
+### 当時の事実
 
 キャンセルで破棄されるのは、YP サーバー・プレイヤー・自動ダウンロードルールの
 **追加 / 削除 / 並べ替え**だけ。各項目のフィールド編集と、表示・ネットワーク・通知・動作・
 ダウンロードの各ページは `AppSettings` 配下のオブジェクトを直接書き換えるため、
-キャンセルしても値がメモリ上に残る。
+キャンセルしても値がメモリ上に残った。
 
-さらに、残った値はアプリ終了時の `SaveAsync()`（ウィンドウサイズ保存）で JSON に書き込まれる。
+さらに、残った値はアプリ終了時の `SaveAsync()`（ウィンドウサイズ保存）で JSON に書き込まれた。
 つまり「キャンセルしたはずの変更が次回起動時にも残る」。
 
-詳細は [spec/settings.md](../spec/settings.md#4-設定ダイアログのキャンセル挙動)、
-経緯は [design/decisions.md](../design/decisions.md#設定のキャンセルが一部しか効かない)。
+### 現状
 
-### 確認すべきこと
-
-- 実際に「キャンセル → アプリ終了 → 再起動」で値が残るか
-- 直すならダイアログを開いた時点でディープコピーを取る方式でよいか
+設定ダイアログを「複製を編集して OK で書き戻す」方式に変えたため解消。
+キャンセルはどのページの変更も残さない。
+理由は [design/decisions.md](../design/decisions.md#なぜ設定ダイアログを複製の編集にしたか)。
 
 ---
 

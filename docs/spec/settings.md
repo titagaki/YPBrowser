@@ -26,11 +26,14 @@
 |---|---|
 | メインウィンドウ `Loaded` | `LoadAsync()` → 通知サービス初期化 → 自動更新開始 → ウィンドウサイズ復元 |
 | 旧形式からの移行 | `LoadAsync()` の中で変換できたら即 `SaveAsync()`（途中で落ちても変換をやり直さないため） |
-| 設定ダイアログ「OK」 | YP サーバー・プレイヤー・自動ダウンロードルールの一覧を差し替えて `SaveAsync()` |
+| 設定ダイアログ「OK」 | 編集していた複製を `AppSettings` へ書き戻して `SaveAsync()`（[4 章](#4-設定の反映と保存のタイミング)） |
+| 設定ダイアログ「キャンセル」 | 何もしない（複製ごと捨てる） |
 | ルール編集ダイアログ「OK」 | `Rules` と `Tags` を差し替えて `SaveAsync()` → 再判定 → 表示更新 |
 | タグ設定ダイアログ「OK」 | `Tags` を差し替え、消えたタグの ID をルールから除いて `SaveAsync()` → 再判定 → 表示更新 |
 | 一覧の星のトグル | 自動生成ルールを追加・削除して即 `SaveAsync()` → 再判定 → 表示更新 |
 | メインウィンドウ `Closing` | `Window.Width` / `Height` / `SplitterPosition` を現在値で更新して `SaveAsync()` |
+
+保存の契機が複数あるので、`SaveAsync()` の書き込みは `SemaphoreSlim` で直列化する。
 
 ## 3. 全設定項目
 
@@ -162,20 +165,50 @@
 | キー | 型 | 既定値 | 適用 | 内容 |
 |---|---|---|---|---|
 | `Enabled` | bool | `true` | ✔ | false でトースト通知を出さない |
+| `NotifyOnFavorite` | bool | `true` | ✔ | false で通知タグの新着通知を出さない（タグごとの `Notify` より優先） |
 | `SoundEnabled` | bool | `false` | ✘ | 未適用（UI にも無い） |
 | `SoundFile` | string | `""` | ✘ | 未適用（UI にも無い） |
 | `BalloonTimeoutSeconds` | int | `5` | ✘ | 未適用（UI では編集可） |
+
+`NotifyOnFavorite` は旧 `Behavior.NotifyOnFavorite`。タグ機能に吸収されるまでの暫定項目。
 
 ### 3.9 `Behavior`（`BehaviorSettings`）
 
 | キー | 型 | 既定値 | 適用 | 内容 |
 |---|---|---|---|---|
-| `RefreshIntervalSeconds` | int | `60` | ✔ | 自動更新間隔。下限 30 秒 |
-| `StartMinimized` | bool | `false` | ✘ | 未適用 |
-| `MinimizeToTray` | bool | `true` | ✘ | 未適用（トレイアイコン自体が未実装） |
-| `OpenOnDoubleClick` | bool | `true` | ✘ | 未適用（ダブルクリック再生は常に有効） |
-| `NotifyOnFavorite` | bool | `true` | ✔ | false で通知タグの新着通知を出さない（タグごとの `Notify` より優先） |
+| `RefreshIntervalSeconds` | int | `60` | ✔ | 自動更新間隔。`60` / `30` / `120` / `0`（更新しない）のみ。下限 30 秒 |
+| `StartupState` | enum | `Normal` | ✔ | `Normal` / `Minimized` / `Tray` |
+| `MinimizeButtonAction` | enum | `KeepInTaskbar` | ✔ | `KeepInTaskbar` / `MinimizeToTray` |
 | `ActiveFilterIndex` | int | `0` | ✘ | 未適用。ビュー選択は保存も復元もされず、起動時は常に「すべて」 |
+
+閉じるボタン（✕）の挙動は「終了」で固定。設定項目は持たない。
+最小化とクローズの両方に格納オプションがあると、どちらを設定したのか分からなくなるため。
+
+ダブルクリック再生は常に有効（旧 `OpenOnDoubleClick` は廃止）。
+
+#### 旧「動作」設定からの移行
+
+読み込み時に一度だけ変換され、旧キーは保存ファイルから消える
+（値が入っていれば「設定ファイルに書かれていた」= 移行対象、という判定）。
+
+| 旧キー | 新しい形 |
+|---|---|
+| `StartMinimized = true` | `StartupState = Minimized` |
+| `StartMinimized = false` | `StartupState = Normal`（既定のまま） |
+| `MinimizeToTray = true` | `MinimizeButtonAction = MinimizeToTray` |
+| `MinimizeToTray = false` | `MinimizeButtonAction = KeepInTaskbar` |
+| `NotifyOnFavorite` | `Notifications.NotifyOnFavorite` へそのまま |
+| `OpenOnDoubleClick` | 破棄（常にオン） |
+
+`RefreshIntervalSeconds` がプリセットに無い場合は最も近い値へ丸める。
+
+| 保存されていた値 | 丸めた結果 |
+|---|---|
+| `0` 以下 | `0`（更新しない） |
+| 正の値 | `30` / `60` / `120` のうち最も近い値。等距離なら短い方 |
+
+正の値が `0` へ丸まることはない。速く更新したかった設定が「更新しない」に化けると、
+ユーザーには故障に見えるため。
 
 ### 3.10 `Window`（`WindowSettings`）
 
@@ -187,24 +220,39 @@
 | `Y` | double | `-1` | ✘ | 保存も復元もされない |
 | `SplitterPosition` | double | `150` | ✔ | 詳細パネルの高さ。起動時に復元（`> 0` のとき）、終了時に保存 |
 
-## 4. 設定ダイアログのキャンセル挙動
+## 4. 設定の反映と保存のタイミング
 
-設定ダイアログは「OK」で `SaveAsync()`、「キャンセル」は何もせず閉じるだけ。
-編集内容がメモリ上の設定に残るかどうかは項目の種類で異なる。
+設定ダイアログは **OK・キャンセル**で確定する。
+編集の対象は `AppSettings` 本体ではなく、ダイアログを開いた時点で取った複製
+（`SettingsDraft`）。本体に書き戻すのは「OK」のときだけ。
 
-| 編集内容 | キャンセル時 |
+```
+設定ボタン
+   └─ SettingsDraft.From(Current)   ← 複製を取る
+        ├─ 各ページはこの複製を読み書きする
+        ├─ OK       → Draft.ApplyTo(Current) → SaveAsync()
+        └─ キャンセル → 複製を捨てる（本体は最初から触っていない）
+```
+
+| 複製に含む | 複製に含まない |
 |---|---|
-| YP サーバー・プレイヤー・自動ダウンロードルールの**追加 / 削除 / 並べ替え** | 破棄される（`ObservableCollection` のみを変更し、OK 時に `AppSettings` へ差し替えるため） |
-| 上記の**各項目のフィールド編集**（名前・URL など） | 残る（一覧は同じインスタンスを参照しているため in-place で書き換わる） |
-| 表示・ネットワーク・通知・動作・ダウンロード（保存先・ファイル名）ページ | 残る（`AppSettings` の各セクションを直接書き換えるため） |
+| `YpServers` / `Players` / `AutoDownloadRules` / `Downloader` / `Network` / `Display` / `Notifications` / `Behavior` | `Tags` / `Rules` / `Window` |
 
-キャンセルで残った変更は JSON へ即書き込まれないが、その後に保存契機（星のトグル、
-アプリ終了時）があれば永続化される。
+`Tags` と `Rules` はルール編集・タグ設定ダイアログが持ち主なので触らない。
+設定ダイアログの OK で書き戻す対象にも入れていない（別ダイアログの編集を上書きしないため）。
+
+キャンセルはどのページの変更も残さない。以前は一覧の増減しか戻らず、各項目の中身や
+表示・ネットワーク・通知ページの変更は本体に残っていた（[design/decisions.md](../design/decisions.md#なぜ設定ダイアログを複製の編集にしたか)）。
+
+テキスト入力は既定どおりフォーカスが外れた時点で複製へ届く。
+入力欄にカーソルを置いたまま OK を押しても値が落ちないよう、
+OK では先に現在の入力欄の束縛を確定させてから書き戻す。
 
 ## 5. 設定 UI の入力反映パターン
 
-各ページのコードビハインドは「リスト選択 → テキストボックスへ反映 → 入力 → 設定オブジェクトへ書き戻し」
-という流れを取る。反映時の `TextChanged` で設定が上書きされるのを防ぐため `_loading` フラグを使う。
+一覧を持つページ（YP サーバー・自動ダウンロードルール）のコードビハインドは
+「リスト選択 → テキストボックスへ反映 → 入力 → 複製のオブジェクトへ書き戻し」
+という流れを取る。反映時の `TextChanged` で値が上書きされるのを防ぐため `_loading` フラグを使う。
 
 ```csharp
 private bool _loading;
@@ -222,5 +270,17 @@ private void NameBox_TextChanged(...)
 }
 ```
 
-数値入力（更新間隔・タイムアウト等）は `TryParse` に成功したときだけ設定へ反映され、
+数値入力（タイムアウト等）は `TryParse` に成功したときだけ複製へ反映され、
 失敗した入力は無視される（エラー表示はない）。
+自動更新間隔だけは自由入力をやめてプリセットのコンボボックスにしたので、この問題は起きない。
+
+## 6. 設定 UI の部品
+
+| 部品 | 置き場所 | 役割 |
+|---|---|---|
+| `SettingCard` | `Views/Controls/SettingCard.cs` | 1 設定 = 1 行。アイコン / 見出し / 説明 / 右のコントロール |
+| `SettingsDraft` | `Settings/SettingsDraft.cs` | ダイアログが編集する複製。OK で本体へ書き戻す |
+| 見た目の定義 | `Themes/Settings.xaml` | カード・左ナビ・トグルスイッチ・グループ枠のスタイル |
+
+カード行は全ページで同じコントロールを使う。ページごとに手書きすると、間隔と右端の位置が
+ページ間でずれて、結局また雑然とした印象に戻るため。

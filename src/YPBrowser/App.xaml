@@ -8,6 +8,7 @@
                 <!-- 色は両方が Themes/Palette.xaml をマージして共有する -->
                 <ResourceDictionary Source="Themes/Buttons.xaml" />
                 <ResourceDictionary Source="Themes/Controls.xaml" />
+                <ResourceDictionary Source="Themes/Settings.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

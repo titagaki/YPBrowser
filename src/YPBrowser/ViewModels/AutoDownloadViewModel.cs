@@ -1,16 +1,15 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using YPBrowser.Abstractions;
 using YPBrowser.Settings;
 
 namespace YPBrowser.ViewModels;
 
 public partial class AutoDownloadViewModel : ObservableObject
 {
-    private readonly ISettingsService _settings;
+    private readonly SettingsDraft _draft;
 
-    public DownloaderSettings Downloader => _settings.Current.Downloader;
+    public DownloaderSettings Downloader => _draft.Downloader;
 
     public ObservableCollection<AutoDownloadRuleSettings> Rules { get; } = [];
 
@@ -19,16 +18,10 @@ public partial class AutoDownloadViewModel : ObservableObject
     private AutoDownloadRuleSettings? _selectedRule;
     public bool HasSelectedRule => SelectedRule != null;
 
-    public AutoDownloadViewModel(ISettingsService settings)
+    public AutoDownloadViewModel(SettingsDraft draft)
     {
-        _settings = settings;
-        Load();
-    }
-
-    private void Load()
-    {
-        Rules.Clear();
-        foreach (var r in _settings.Current.AutoDownloadRules) Rules.Add(r);
+        _draft = draft;
+        foreach (var r in draft.AutoDownloadRules) Rules.Add(r);
     }
 
     [RelayCommand]
@@ -61,8 +54,9 @@ public partial class AutoDownloadViewModel : ObservableObject
         if (idx < Rules.Count - 1) Rules.Move(idx, idx + 1);
     }
 
+    /// <summary>並べ替えた結果を複製へ戻す。「OK」の直前に呼ばれる。</summary>
     public void Flush()
     {
-        _settings.Current.AutoDownloadRules = [.. Rules];
+        _draft.AutoDownloadRules = [.. Rules];
     }
 }

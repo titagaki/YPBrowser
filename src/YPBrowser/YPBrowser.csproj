@@ -7,6 +7,7 @@
     <RootNamespace>YPBrowser</RootNamespace>
     <AssemblyName>YPBrowser</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

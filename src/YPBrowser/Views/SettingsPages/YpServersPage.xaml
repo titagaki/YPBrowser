@@ -24,6 +24,7 @@
                     <DockPanel Margin="2,3">
                         <CheckBox DockPanel.Dock="Left"
                                   IsChecked="{Binding Enabled, Mode=TwoWay}"
+
                                   VerticalAlignment="Center"
                                   Margin="0,0,6,0" />
                         <StackPanel>
@@ -61,11 +62,13 @@
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="名前" VerticalAlignment="Center"/>
                     <TextBox Grid.Row="0" Grid.Column="1" x:Name="YpNameBox"
-                             TextChanged="YpNameBox_TextChanged" Margin="0,0,0,4"/>
+                             TextChanged="YpNameBox_TextChanged"
+                             Margin="0,0,0,4"/>
 
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="URL" VerticalAlignment="Center"/>
                     <TextBox Grid.Row="1" Grid.Column="1" x:Name="YpUrlBox"
-                             TextChanged="YpUrlBox_TextChanged" Margin="0,0,0,4"/>
+                             TextChanged="YpUrlBox_TextChanged"
+                             Margin="0,0,0,4"/>
 
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="ホスト" VerticalAlignment="Center"/>
                     <TextBox Grid.Row="2" Grid.Column="1" x:Name="YpHostBox"

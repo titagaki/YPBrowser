@@ -1,0 +1,88 @@
+<UserControl
+    x:Class="YPBrowser.Views.SettingsPages.GeneralPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ctl="clr-namespace:YPBrowser.Views.Controls">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,16">
+
+            <TextBlock Style="{StaticResource SettingPageTitleStyle}" Text="全般" />
+
+            <ctl:SettingCard Icon="&#xE7E8;" Title="起動時の状態">
+                <ComboBox Width="150"
+                          ItemsSource="{Binding StartupStateOptions}"
+                          DisplayMemberPath="Label"
+                          SelectedValuePath="Value"
+                          SelectedValue="{Binding StartupState}" />
+            </ctl:SettingCard>
+
+            <ctl:SettingCard Icon="&#xE921;" Title="最小化ボタンを押したとき"
+                             Description="「トレイに格納」だとタスクバーから消えます">
+                <ComboBox Width="150"
+                          ItemsSource="{Binding MinimizeButtonActionOptions}"
+                          DisplayMemberPath="Label"
+                          SelectedValuePath="Value"
+                          SelectedValue="{Binding MinimizeButtonAction}" />
+            </ctl:SettingCard>
+
+            <ctl:SettingCard Icon="&#xE72C;" Title="チャンネル一覧の自動更新"
+                             Description="短くしすぎると YP に負荷がかかります">
+                <ComboBox Width="150"
+                          ItemsSource="{Binding RefreshIntervalOptions}"
+                          DisplayMemberPath="Label"
+                          SelectedValuePath="Value"
+                          SelectedValue="{Binding RefreshIntervalSeconds}" />
+            </ctl:SettingCard>
+
+            <TextBlock Style="{StaticResource SettingGroupTitleStyle}" Text="再生" />
+
+            <Border Style="{StaticResource SettingGroupStyle}">
+                <StackPanel>
+                    <ctl:SettingCard Variant="GroupHeader" Icon="&#xE768;" Title="外部プレイヤー">
+                        <Button Content="＋ 追加" Click="AddPlayer_Click" />
+                    </ctl:SettingCard>
+
+                    <ItemsControl ItemsSource="{Binding Players}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <ctl:SettingCard Variant="SubRow"
+                                                 Title="{Binding Name}"
+                                                 Description="{Binding ExecutablePath}"
+                                                 IsDescriptionMonospace="True">
+                                    <ctl:SettingCard.Style>
+                                        <Style TargetType="{x:Type ctl:SettingCard}"
+                                               BasedOn="{StaticResource {x:Type ctl:SettingCard}}">
+                                            <Style.Triggers>
+                                                <!-- 既定はチェックボックスではなくバッジで示す -->
+                                                <DataTrigger Binding="{Binding IsDefault}" Value="True">
+                                                    <Setter Property="Badge" Value="既定" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ctl:SettingCard.Style>
+
+                                    <Button Content="⋯" Style="{StaticResource CardMenuButtonStyle}"
+                                            Click="PlayerMenu_Click">
+                                        <Button.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="編集" Click="EditPlayer_Click" />
+                                                <MenuItem Header="既定にする" Click="SetDefaultPlayer_Click" />
+                                                <Separator />
+                                                <MenuItem Header="削除" Click="RemovePlayer_Click" />
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
+                                </ctl:SettingCard>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Style="{StaticResource SettingHintStyle}"
+                       Text="チャンネルのダブルクリックで、既定のプレイヤーが起動します。" />
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

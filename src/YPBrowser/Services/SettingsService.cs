@@ -24,6 +24,9 @@ public class SettingsService : ISettingsService
 
     private readonly ILogger<SettingsService> _logger;
 
+    // 保存の契機は複数ある（設定の OK・星のトグル・終了時）ので、書き込み同士が重ならないようにする
+    private readonly SemaphoreSlim _saveLock = new(1, 1);
+
     public AppSettings Current { get; private set; } = CreateDefaults();
 
     public SettingsService(ILogger<SettingsService> logger)
@@ -68,6 +71,7 @@ public class SettingsService : ISettingsService
 
     public async Task SaveAsync()
     {
+        await _saveLock.WaitAsync();
         try
         {
             Directory.CreateDirectory(SettingsDir);
@@ -78,6 +82,10 @@ public class SettingsService : ISettingsService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save settings");
+        }
+        finally
+        {
+            _saveLock.Release();
         }
     }
 

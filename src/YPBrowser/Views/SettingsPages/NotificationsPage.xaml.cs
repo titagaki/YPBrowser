@@ -1,14 +1,14 @@
 using System.Windows.Controls;
-using YPBrowser.Abstractions;
+using YPBrowser.ViewModels;
 using YPBrowser.ViewModels.SettingsPages;
 
 namespace YPBrowser.Views.SettingsPages;
 
 public partial class NotificationsPage : UserControl
 {
-    public NotificationsPage(ISettingsService settings)
+    public NotificationsPage(SettingsViewModel viewModel)
     {
         InitializeComponent();
-        DataContext = new NotificationsPageViewModel(settings.Current.Notifications);
+        DataContext = new NotificationsPageViewModel(viewModel.Draft.Notifications);
     }
 }

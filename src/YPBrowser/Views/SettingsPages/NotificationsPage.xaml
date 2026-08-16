@@ -7,11 +7,17 @@
         <StackPanel Margin="4">
             <TextBlock Text="通知設定" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12" />
 
-            <CheckBox Content="トースト通知を有効にする" Margin="0,0,0,12"
+            <CheckBox Content="トースト通知を有効にする" Margin="0,0,0,10"
+                      Style="{StaticResource ToggleSwitchStyle}"
                       IsChecked="{Binding Enabled}" />
 
+            <!-- 旧「動作」ページから移動。タグ機能に吸収されるまでの暫定 -->
+            <CheckBox Content="お気に入りチャンネルを通知" Margin="0,0,0,12"
+                      Style="{StaticResource ToggleSwitchStyle}"
+                      IsChecked="{Binding NotifyOnFavorite}" />
+
             <TextBlock Text="バルーン表示時間（秒）" Margin="0,0,0,2" />
-            <TextBox Text="{Binding BalloonTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Text="{Binding BalloonTimeoutSeconds, UpdateSourceTrigger=LostFocus}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

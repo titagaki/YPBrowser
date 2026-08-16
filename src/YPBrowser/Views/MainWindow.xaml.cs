@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using YPBrowser.Abstractions;
+using YPBrowser.Settings;
 using YPBrowser.ViewModels;
 
 namespace YPBrowser.Views;
@@ -12,23 +13,47 @@ public partial class MainWindow : Window
     public MainViewModel ViewModel { get; }
     private readonly ISettingsService _settings;
     private readonly INotificationService _notificationService;
+    private readonly ITrayIconService _tray;
 
-    public MainWindow(MainViewModel viewModel, ISettingsService settings, INotificationService notificationService)
+    /// <summary>
+    /// 起動時の「最小化」は、最小化ボタンの設定に関係なくタスクバーへ置く。
+    /// 「起動時の状態」で最小化を選んだ人が、狙っていないトレイ格納に化けるのを防ぐ。
+    /// </summary>
+    private bool _startupComplete;
+
+    public MainWindow(
+        MainViewModel viewModel,
+        ISettingsService settings,
+        INotificationService notificationService,
+        ITrayIconService tray)
     {
         ViewModel = viewModel;
         _settings = settings;
         _notificationService = notificationService;
+        _tray = tray;
         DataContext = viewModel;
         InitializeComponent();
 
-        Loaded += Window_Loaded;
         Closing += Window_Closing;
+        Closed += (_, _) => (_tray as IDisposable)?.Dispose();
     }
 
-    private async void Window_Loaded(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// 設定を読み込んだ後、ウィンドウを出す前に呼ぶ。
+    /// 「トレイに格納した状態で起動」ではウィンドウを一度も出さないので、
+    /// 初期化を <c>Loaded</c> に置くと動き出さない。
+    /// </summary>
+    public void InitializeApp()
     {
-        await _settings.LoadAsync();
         _notificationService.Initialize();
+
+        _tray.Attach(this);
+
+        // トレイのメニューは、閉じるまでメッセージを自前のループで回している。
+        // その中でウィンドウを出し入れすると閉じ切らないので、ループを抜けてから実行する
+        _tray.ShowWindowRequested += (_, _) => Dispatcher.BeginInvoke(RestoreFromTray);
+        _tray.ExitRequested += (_, _) => Dispatcher.BeginInvoke(ExitFromTray);
+
         ViewModel.Initialize(Dispatcher);
 
         var ws = _settings.Current.Window;
@@ -41,12 +66,75 @@ public partial class MainWindow : Window
             DetailRow.Height = new GridLength(ws.SplitterPosition);
     }
 
+    /// <summary>起動処理が終わったことを知らせる。以降の最小化は設定どおりに扱う。</summary>
+    public void MarkStartupComplete() => _startupComplete = true;
+
+    /// <summary>ウィンドウを引っ込めてトレイのアイコンだけにする。</summary>
+    public void HideToTray()
+    {
+        _tray.Show();
+        ShowInTaskbar = false;
+        Hide();
+    }
+
+    private void RestoreFromTray()
+    {
+        ShowInTaskbar = true;
+        Show();
+        if (WindowState == WindowState.Minimized)
+            WindowState = WindowState.Normal;
+        Activate();
+
+        // ウィンドウが見えている間はアイコンを出さない（入口を 2 つにしない）
+        _tray.Hide();
+    }
+
+    protected override void OnStateChanged(EventArgs e)
+    {
+        base.OnStateChanged(e);
+
+        if (!_startupComplete) return;
+        if (WindowState != WindowState.Minimized) return;
+        if (_settings.Current.Behavior.MinimizeButtonAction != MinimizeButtonAction.MinimizeToTray) return;
+
+        HideToTray();
+    }
+
+    /// <summary>
+    /// 閉じるボタンは常に終了。トレイに逃がす設定は持たない
+    /// （最小化と閉じるの両方に格納があると、どちらで消えたのか分からなくなる）。
+    /// </summary>
     private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
-        _settings.Current.Window.Width = ActualWidth;
-        _settings.Current.Window.Height = ActualHeight;
-        _settings.Current.Window.SplitterPosition = DetailRow.Height.Value;
+        SaveWindowMetrics();
         await _settings.SaveAsync();
+    }
+
+    /// <summary>
+    /// トレイのメニューの「終了」。
+    /// 「トレイに格納した状態で起動」だとウィンドウを一度も出していないことがあり、
+    /// その状態の <c>Close()</c> では終了まで至らない。ここは明示的に落とす。
+    /// </summary>
+    private async void ExitFromTray()
+    {
+        SaveWindowMetrics();
+        await _settings.SaveAsync();
+
+        // プロセスが消えるまでアイコンが残らないように、先に自分で消す
+        (_tray as IDisposable)?.Dispose();
+
+        Application.Current.Shutdown();
+    }
+
+    private void SaveWindowMetrics()
+    {
+        // トレイに格納中は ActualWidth が 0 になるので、その場合は前回の値を残す
+        if (ActualWidth <= 0) return;
+
+        var ws = _settings.Current.Window;
+        ws.Width = ActualWidth;
+        ws.Height = ActualHeight;
+        ws.SplitterPosition = DetailRow.Height.Value;
     }
 
     private void ChannelList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -131,8 +219,7 @@ public partial class MainWindow : Window
     private void OpenSettings_Click(object sender, RoutedEventArgs e)
     {
         var dialog = App.Services.GetRequiredService<SettingsViewModel>();
-        var settingsWin = new SettingsDialog(dialog, _settings);
-        settingsWin.Owner = this;
+        var settingsWin = new SettingsDialog(dialog) { Owner = this };
         settingsWin.ShowDialog();
     }
 

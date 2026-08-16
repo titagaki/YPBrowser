@@ -8,6 +8,9 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
 {
     private static readonly TimeSpan MinFetchInterval = TimeSpan.FromMinutes(4);
 
+    /// <summary>「更新しない」のときに設定の変更へ気付くための見張り間隔。</summary>
+    private static readonly TimeSpan IdlePollInterval = TimeSpan.FromSeconds(5);
+
     private readonly IYpFetchService _fetchService;
     private readonly ISettingsService _settings;
     private readonly ILogger<AutoRefreshService> _logger;
@@ -53,7 +56,24 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
 
         while (!ct.IsCancellationRequested)
         {
-            var intervalSec = Math.Max(30, _settings.Current.Behavior.RefreshIntervalSeconds);
+            var configured = _settings.Current.Behavior.RefreshIntervalSeconds;
+
+            // 0 =「更新しない」。設定は閉じずに変えられるので、ループ自体は止めずに見張り続ける
+            if (configured <= 0)
+            {
+                NextRefreshAt = DateTime.MaxValue;
+                try
+                {
+                    await Task.Delay(IdlePollInterval, ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                continue;
+            }
+
+            var intervalSec = Math.Max(30, configured);
             NextRefreshAt = DateTime.Now.AddSeconds(intervalSec);
             try
             {

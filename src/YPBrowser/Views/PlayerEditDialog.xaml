@@ -1,0 +1,46 @@
+<Window
+    x:Class="YPBrowser.Views.PlayerEditDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="外部プレイヤー"
+    Width="460" SizeToContent="Height"
+    WindowStartupLocation="CenterOwner"
+    ShowInTaskbar="False"
+    ResizeMode="NoResize">
+
+    <StackPanel Margin="16">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="名前" VerticalAlignment="Center" />
+            <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" x:Name="NameBox"
+                     Margin="0,0,0,6" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="実行ファイル" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" x:Name="ExeBox" Margin="0,0,6,6" />
+            <Button Grid.Row="1" Grid.Column="2" Content="参照" Click="Browse_Click" Margin="0,0,0,6" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="引数" VerticalAlignment="Center" />
+            <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" x:Name="ArgsBox" />
+        </Grid>
+
+        <!-- 置換の説明はここだけに置く。設定画面へ常時出すと、
+             プレイヤーを触らない人にも見え続ける -->
+        <TextBlock Style="{StaticResource SettingHintStyle}" Margin="80,6,0,0"
+                   Text="{}{url} に配信URLが代入されます。" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="OK" Click="OK_Click" Width="80" Margin="0,0,8,0" IsDefault="True" />
+            <Button Content="キャンセル" Click="Cancel_Click" Width="80" IsCancel="True" />
+        </StackPanel>
+    </StackPanel>
+</Window>

@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!-- 入力は既定の UpdateSourceTrigger（フォーカスが外れた時点）で保存する -->
     <ScrollViewer>
         <StackPanel Margin="4">
             <TextBlock Text="表示設定" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12" />
@@ -13,18 +14,15 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="80" />
                 </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" Margin="0,0,4,0"
-                         Text="{Binding FontFamily, UpdateSourceTrigger=PropertyChanged}" />
-                <TextBox Grid.Column="1"
-                         Text="{Binding FontSize, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBox Grid.Column="0" Margin="0,0,4,0" Text="{Binding FontFamily}" />
+                <TextBox Grid.Column="1" Text="{Binding FontSize}" />
             </Grid>
 
             <TextBlock Text="チャンネル名色（お気に入り）" Margin="0,0,0,2" />
-            <TextBox Margin="0,0,0,12"
-                     Text="{Binding FavoriteNameColor, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Margin="0,0,0,12" Text="{Binding FavoriteNameColor}" />
 
             <TextBlock Text="新着チャンネル色" Margin="0,0,0,2" />
-            <TextBox Text="{Binding NewChannelColor, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Text="{Binding NewChannelColor}" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>

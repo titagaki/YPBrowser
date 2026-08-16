@@ -1,14 +1,14 @@
 using System.Windows.Controls;
-using YPBrowser.Abstractions;
+using YPBrowser.ViewModels;
 using YPBrowser.ViewModels.SettingsPages;
 
 namespace YPBrowser.Views.SettingsPages;
 
 public partial class NetworkPage : UserControl
 {
-    public NetworkPage(ISettingsService settings)
+    public NetworkPage(SettingsViewModel viewModel)
     {
         InitializeComponent();
-        DataContext = new NetworkPageViewModel(settings.Current.Network);
+        DataContext = new NetworkPageViewModel(viewModel.Draft.Network);
     }
 }

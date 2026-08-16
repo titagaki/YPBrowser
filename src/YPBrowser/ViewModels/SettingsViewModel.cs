@@ -2,15 +2,20 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using YPBrowser.Abstractions;
-using YPBrowser.Models;
 using YPBrowser.Settings;
 
 namespace YPBrowser.ViewModels;
 
+/// <summary>
+/// 設定ダイアログ全体の状態。
+/// 編集するのは <see cref="SettingsDraft"/>（設定の複製）で、本体へ書き戻すのは「OK」のときだけ。
+/// </summary>
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsService _settings;
-    public AppSettings Current => _settings.Current;
+
+    /// <summary>編集中の複製。ページはここから値を読み書きする。</summary>
+    public SettingsDraft Draft { get; }
 
     public ObservableCollection<YpServerSettings> YpServers { get; } = [];
     public ObservableCollection<PlayerSettings> Players { get; } = [];
@@ -20,26 +25,16 @@ public partial class SettingsViewModel : ObservableObject
     private YpServerSettings? _selectedYpServer;
     public bool HasSelectedYpServer => SelectedYpServer != null;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelectedPlayer))]
-    private PlayerSettings? _selectedPlayer;
-    public bool HasSelectedPlayer => SelectedPlayer != null;
-
     public AutoDownloadViewModel AutoDownload { get; }
 
     public SettingsViewModel(ISettingsService settings)
     {
         _settings = settings;
-        AutoDownload = new AutoDownloadViewModel(settings);
-        Load();
-    }
+        Draft = SettingsDraft.From(settings.Current);
+        AutoDownload = new AutoDownloadViewModel(Draft);
 
-    private void Load()
-    {
-        YpServers.Clear();
-        foreach (var s in _settings.Current.YpServers) YpServers.Add(s);
-        Players.Clear();
-        foreach (var p in _settings.Current.Players) Players.Add(p);
+        foreach (var s in Draft.YpServers) YpServers.Add(s);
+        foreach (var p in Draft.Players) Players.Add(p);
     }
 
     [RelayCommand]
@@ -73,26 +68,36 @@ public partial class SettingsViewModel : ObservableObject
         if (idx < YpServers.Count - 1) YpServers.Move(idx, idx + 1);
     }
 
-    [RelayCommand]
-    private void AddPlayer()
+    public void AddPlayer(PlayerSettings player)
     {
-        var p = new PlayerSettings { Name = "新しいプレイヤー", ArgumentTemplate = "\"{url}\"" };
-        Players.Add(p);
-        SelectedPlayer = p;
+        // 最初の1件は、どれも既定でないと再生できないので既定にしておく
+        if (Players.Count == 0) player.IsDefault = true;
+        Players.Add(player);
     }
 
-    [RelayCommand]
-    private void RemovePlayer()
+    public void RemovePlayer(PlayerSettings player)
     {
-        if (SelectedPlayer != null)
-            Players.Remove(SelectedPlayer);
+        var wasDefault = player.IsDefault;
+        Players.Remove(player);
+
+        if (wasDefault && Players.Count > 0 && !Players.Any(p => p.IsDefault))
+            SetDefaultPlayer(Players[0]);
     }
 
-    public async Task SaveAsync()
+    /// <summary>既定は 1 つだけ。行に付く「既定」バッジがそのまま状態を表す。</summary>
+    public void SetDefaultPlayer(PlayerSettings player)
     {
-        _settings.Current.YpServers = [.. YpServers];
-        _settings.Current.Players = [.. Players];
+        foreach (var p in Players) p.IsDefault = ReferenceEquals(p, player);
+    }
+
+    /// <summary>「OK」で呼ぶ。複製を本体へ書き戻して保存する。</summary>
+    public async Task ApplyAsync()
+    {
+        Draft.YpServers = [.. YpServers];
+        Draft.Players = [.. Players];
         AutoDownload.Flush();
+
+        Draft.ApplyTo(_settings.Current);
         await _settings.SaveAsync();
     }
 }

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using YPBrowser.Models;
 
 namespace YPBrowser.Settings;
@@ -54,12 +56,17 @@ public class FavoriteSettings
     public string SoundFile { get; set; } = "";
 }
 
-public class PlayerSettings
+/// <summary>
+/// 外部プレイヤー 1 件。
+/// 設定画面が一覧を出したまま編集モーダルで書き換えるので、変更を一覧へ返せるように
+/// 通知を出す（他の設定クラスは通知を持たない素の入れ物のまま）。
+/// </summary>
+public partial class PlayerSettings : ObservableObject
 {
-    public string Name { get; set; } = "";
-    public string ExecutablePath { get; set; } = "";
-    public string ArgumentTemplate { get; set; } = "\"{url}\"";
-public bool IsDefault { get; set; } = false;
+    [ObservableProperty] private string _name = "";
+    [ObservableProperty] private string _executablePath = "";
+    [ObservableProperty] private string _argumentTemplate = "\"{url}\"";
+    [ObservableProperty] private bool _isDefault = false;
 }
 
 public class NetworkSettings
@@ -86,16 +93,55 @@ public class NotificationSettings
     public bool SoundEnabled { get; set; } = false;
     public string SoundFile { get; set; } = "";
     public int BalloonTimeoutSeconds { get; set; } = 5;
+
+    /// <summary>
+    /// false で通知タグの新着通知を出さない（タグごとの <c>Notify</c> より優先）。
+    /// 旧 <c>Behavior.NotifyOnFavorite</c>。
+    /// </summary>
+    public bool NotifyOnFavorite { get; set; } = true;
+}
+
+/// <summary>起動直後のウィンドウの状態。</summary>
+public enum StartupWindowState
+{
+    Normal,
+    Minimized,
+    Tray,
+}
+
+/// <summary>最小化ボタンを押したときの行き先。閉じるボタンは常に終了で、設定は持たない。</summary>
+public enum MinimizeButtonAction
+{
+    KeepInTaskbar,
+    MinimizeToTray,
 }
 
 public class BehaviorSettings
 {
+    /// <summary>
+    /// 自動更新間隔。<c>0</c> で自動更新しない。
+    /// UI は <c>SettingsMigration.RefreshIntervalPresets</c> のプリセットしか選ばせない。
+    /// 短すぎる値を手入力して YP に負荷をかける事故を防ぐため。
+    /// </summary>
     public int RefreshIntervalSeconds { get; set; } = 60;
-    public bool StartMinimized { get; set; } = false;
-    public bool MinimizeToTray { get; set; } = true;
-    public bool OpenOnDoubleClick { get; set; } = true;
-    public bool NotifyOnFavorite { get; set; } = true;
+
+    public StartupWindowState StartupState { get; set; } = StartupWindowState.Normal;
+
+    public MinimizeButtonAction MinimizeButtonAction { get; set; } = MinimizeButtonAction.KeepInTaskbar;
+
     public int ActiveFilterIndex { get; set; } = 0;
+
+    /// <summary>旧形式。読み込み時に <see cref="StartupState"/> へ移行され、以後は書き出されない。</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StartMinimized { get; set; }
+
+    /// <summary>旧形式。読み込み時に <see cref="MinimizeButtonAction"/> へ移行される。</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? MinimizeToTray { get; set; }
+
+    /// <summary>旧形式。読み込み時に <see cref="NotificationSettings.NotifyOnFavorite"/> へ移行される。</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? NotifyOnFavorite { get; set; }
 }
 
 public class WindowSettings
