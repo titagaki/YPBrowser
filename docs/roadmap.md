@@ -11,12 +11,12 @@
 
 | # | 内容 | 影響 | 参照 |
 |---|---|---|---|
-| 3 | UI で編集できるが未適用の設定が残っている（`Display.FontFamily` / `FontSize` / `NewChannelColor` / `BackgroundColor` / `TextColor` / `SelectedColor`、`Notifications.BalloonTimeoutSeconds` / `SoundEnabled` / `SoundFile`、`Behavior.ActiveFilterIndex`、`Window.X` / `Y`） | 設定しても何も変わらない | [gaps 2](investigations/implementation-gaps.md#2-ui-で編集できるのに反映されない設定) |
+| 3 | UI で編集できるが未適用の設定が残っている（`Display.NewChannelColor`、`Notifications.BalloonTimeoutSeconds` / `SoundEnabled` / `SoundFile`、`Behavior.ActiveFilterIndex`、`Window.X` / `Y`） | 設定しても何も変わらない | [gaps 2](investigations/implementation-gaps.md#2-ui-で編集できるのに反映されない設定) |
 
-3 は 1 項目ずつ「実装する」か「設定項目ごと消す」かを決める。
-2026-08-16 に `Network.ProxyUrl` / `UserAgent` / `Display.FavoriteNameColor` を削除済み。
-`Display.BackgroundColor` / `TextColor` / `SelectedColor` は UI にすら出ていないので、
-実装する意思が無ければ同様に消せる。`FontFamily` / `FontSize` は実装側かもしれず判断が別。
+3 は 1 項目ずつ「実装する」か「設定項目ごと消す」かを決める。2026-08-16 に `Network` 2 件と
+`Display` 5 件を削除済みで、残りは上記のみ。`Notifications.SoundEnabled` / `SoundFile` は
+タグごとの `SoundPath` と二重なので消せる見込み。`Behavior.ActiveFilterIndex` と
+`Window.X` / `Y` は「前回の状態を復元する」もので、消すより実装する側。
 
 ### 実装中に見つかったもの
 
@@ -54,6 +54,9 @@
 
 ## 完了
 
+- 2026-08-16 gap 3 のうち未適用だった `Display` 5 件（`FontFamily` / `FontSize` /
+  `BackgroundColor` / `TextColor` / `SelectedColor`）を削除。変えたい要望が出た時点で作り直す。
+  「表示」ページに残るのは `NewChannelColor` の 1 項目だけになった
 - 2026-08-16 gap 3 の一部を削除。`Network.ProxyUrl`（使っていない）、`Network.UserAgent`
   （アプリが名乗る値でユーザーが指定する対象ではない。`App.xaml.cs` の 1 か所に残す）、
   `Display.FavoriteNameColor`（行の色はタグ側の `BackColor` / `TextColor` で決まるため二重）

@@ -8,16 +8,6 @@
         <StackPanel Margin="4">
             <TextBlock Text="表示設定" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12" />
 
-            <TextBlock Text="フォント" FontWeight="SemiBold" Margin="0,0,0,4" />
-            <Grid Margin="0,0,0,12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="80" />
-                </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0" Margin="0,0,4,0" Text="{Binding FontFamily}" />
-                <TextBox Grid.Column="1" Text="{Binding FontSize}" />
-            </Grid>
-
             <TextBlock Text="新着チャンネル色" Margin="0,0,0,2" />
             <TextBox Text="{Binding NewChannelColor}" />
         </StackPanel>

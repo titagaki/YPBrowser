@@ -107,12 +107,11 @@ public class NetworkSettings
 
 public class DisplaySettings
 {
-    public string FontFamily { get; set; } = "Yu Gothic UI";
-    public double FontSize { get; set; } = 13;
-    public string BackgroundColor { get; set; } = "#FFFFFF";
-    public string TextColor { get; set; } = "#1A1A1A";
+    /// <summary>
+    /// 新着チャンネルの色。まだ適用されていない
+    /// （差分の色は <c>ChannelDiffToColorConverter</c> の固定値）。
+    /// </summary>
     public string NewChannelColor { get; set; } = "#006600";
-    public string SelectedColor { get; set; } = "#0078D4";
 }
 
 public class NotificationSettings

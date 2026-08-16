@@ -177,18 +177,18 @@
 
 | キー | 型 | 既定値 | 適用 |
 |---|---|---|---|
-| `FontFamily` | string | `"Yu Gothic UI"` | ✘ |
-| `FontSize` | double | `13` | ✘ |
-| `BackgroundColor` | string | `"#FFFFFF"` | ✘ |
-| `TextColor` | string | `"#1A1A1A"` | ✘ |
 | `NewChannelColor` | string | `"#006600"` | ✘ |
-| `SelectedColor` | string | `"#0078D4"` | ✘ |
 
 表示は XAML と `ChannelDiffToColorConverter` の固定値で描画される（[ui.md](ui.md#22-色)）。
-`FontFamily` / `FontSize` / `NewChannelColor` は設定ダイアログで編集・保存できるが反映されない。
+`NewChannelColor` は設定ダイアログで編集・保存できるが反映されない。
 
-旧 `FavoriteNameColor` は削除した。行の色はタグ側の `BackColor` / `TextColor` で決まるため
-（[matching.md](matching.md#5-表示への反映)）、同じことを 2 か所で設定させる形になっていた。
+削除した項目:
+
+| 旧キー | 理由 |
+|---|---|
+| `FavoriteNameColor` | 行の色はタグ側の `BackColor` / `TextColor` で決まる（[matching.md](matching.md#5-表示への反映)） |
+| `FontFamily` / `FontSize` | 未適用。要望が出た時点で作り直す |
+| `BackgroundColor` / `TextColor` / `SelectedColor` | 未適用。UI にも出ていなかった |
 
 ### 3.8 `Notifications`（`NotificationSettings`）
 
