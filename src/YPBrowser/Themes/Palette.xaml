@@ -1,0 +1,43 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        共通の色。Buttons.xaml / Controls.xaml の両方がこれをマージする。
+
+        別ファイルに分けている理由:
+        StaticResource は「自分の辞書と、自分がマージした辞書」なら確実に引ける。
+        兄弟の辞書 (App.xaml に並べてマージしただけの相手) を引くのはマージ順に依存して
+        壊れやすいので、共有する色はここに置いて両方から取り込む。
+    -->
+
+    <Color x:Key="Accent.Color">#FF0067C0</Color>
+
+    <!-- ボタン -->
+    <SolidColorBrush x:Key="Btn.Background" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Btn.Border" Color="#FFD2D6DB" />
+    <SolidColorBrush x:Key="Btn.Foreground" Color="#FF1F2328" />
+    <SolidColorBrush x:Key="Btn.Accent" Color="{StaticResource Accent.Color}" />
+    <SolidColorBrush x:Key="Btn.AccentBorder" Color="#FF005BA8" />
+    <SolidColorBrush x:Key="Btn.Danger" Color="#FFC42B1C" />
+    <SolidColorBrush x:Key="Btn.DangerBorder" Color="#FFE3B0AA" />
+    <!-- 重ねる板。黒の薄いベタなので、白ボタンでもアクセント色ボタンでも自然に沈む -->
+    <SolidColorBrush x:Key="Btn.HoverOverlay" Color="#14000000" />
+    <SolidColorBrush x:Key="Btn.PressOverlay" Color="#22000000" />
+
+    <!-- ボタン以外 -->
+    <SolidColorBrush x:Key="Ctl.Background" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Ctl.Border" Color="#FFD2D6DB" />
+    <SolidColorBrush x:Key="Ctl.BorderHover" Color="#FFB2B8C0" />
+    <SolidColorBrush x:Key="Ctl.Foreground" Color="#FF1F2328" />
+    <SolidColorBrush x:Key="Ctl.ForegroundMuted" Color="#FF5A6069" />
+    <SolidColorBrush x:Key="Ctl.DisabledBackground" Color="#FFF4F5F6" />
+    <SolidColorBrush x:Key="Ctl.DisabledForeground" Color="#FF9AA0A6" />
+    <SolidColorBrush x:Key="Ctl.HoverTint" Color="#0F000000" />
+    <!-- 選択の板。アクセント色の半透明なので、下のタグ色が透ける -->
+    <SolidColorBrush x:Key="Ctl.SelectTint" Color="#2E0067C0" />
+    <SolidColorBrush x:Key="Ctl.PopupBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="Ctl.Thumb" Color="#FFC6CAD0" />
+    <SolidColorBrush x:Key="Ctl.ThumbHover" Color="#FFA3A9B1" />
+
+</ResourceDictionary>
