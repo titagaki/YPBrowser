@@ -11,12 +11,12 @@
 
 | # | 内容 | 影響 | 参照 |
 |---|---|---|---|
-| 3 | UI で編集できるが未適用の設定が残っている（`Display.NewChannelColor`、`Notifications.BalloonTimeoutSeconds` / `SoundEnabled` / `SoundFile`、`Behavior.ActiveFilterIndex`、`Window.X` / `Y`） | 設定しても何も変わらない | [gaps 2](investigations/implementation-gaps.md#2-ui-で編集できるのに反映されない設定) |
+| 3 | UI で編集できるが未適用の設定が残っている（`Display.NewChannelColor`、`Notifications.BalloonTimeoutSeconds` / `SoundEnabled` / `SoundFile`） | 設定しても何も変わらない | [gaps 2](investigations/implementation-gaps.md#2-ui-で編集できるのに反映されない設定) |
 
-3 は 1 項目ずつ「実装する」か「設定項目ごと消す」かを決める。2026-08-16 に `Network` 2 件と
-`Display` 5 件を削除済みで、残りは上記のみ。`Notifications.SoundEnabled` / `SoundFile` は
-タグごとの `SoundPath` と二重なので消せる見込み。`Behavior.ActiveFilterIndex` と
-`Window.X` / `Y` は「前回の状態を復元する」もので、消すより実装する側。
+3 は 1 項目ずつ「実装する」か「設定項目ごと消す」かを決める。残りは上記 4 つだけ。
+`Notifications.SoundEnabled` / `SoundFile` はタグごとの `SoundPath` と二重なので消せる見込み。
+`Display.NewChannelColor` は「表示」ページに 1 つだけ残った項目で、
+消すならページごと無くす判断になる。
 
 ### 実装中に見つかったもの
 
@@ -54,6 +54,10 @@
 
 ## 完了
 
+- 2026-08-16 ウィンドウ位置の復元を実装（`Window.X` / `Y`）。画面外になる位置なら復元せず
+  OS の既定位置に任せる（`WindowPlacement`）。実装中に**終了時の保存が働いていない**ことが
+  分かったので併せて修正（`Closing` が `await` を待たずプロセスが先に落ちていた）。
+  併せて `Behavior.ActiveFilterIndex` を削除。ビューは起動時つねに「すべて」で復元しない
 - 2026-08-16 gap 3 のうち未適用だった `Display` 5 件（`FontFamily` / `FontSize` /
   `BackgroundColor` / `TextColor` / `SelectedColor`）を削除。変えたい要望が出た時点で作り直す。
   「表示」ページに残るのは `NewChannelColor` の 1 項目だけになった

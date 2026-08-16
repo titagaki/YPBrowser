@@ -156,8 +156,6 @@ public class BehaviorSettings
 
     public MinimizeButtonAction MinimizeButtonAction { get; set; } = MinimizeButtonAction.KeepInTaskbar;
 
-    public int ActiveFilterIndex { get; set; } = 0;
-
     /// <summary>旧形式。読み込み時に <see cref="StartupState"/> へ移行され、以後は書き出されない。</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? StartMinimized { get; set; }
@@ -175,9 +173,17 @@ public class WindowSettings
 {
     public double Width { get; set; } = 900;
     public double Height { get; set; } = 600;
-    public double X { get; set; } = -1;
-    public double Y { get; set; } = -1;
     public double SplitterPosition { get; set; } = 150;
+
+    /// <summary>
+    /// 前回の位置。まだ一度も保存していなければ <c>null</c> で、その場合は OS に任せる。
+    /// 負の値も正しい位置になりうる（左側に置いたサブモニタ）ため、
+    /// 「未保存」を数値の番兵では表さない。
+    /// </summary>
+    public double? X { get; set; }
+
+    /// <inheritdoc cref="X"/>
+    public double? Y { get; set; }
 }
 
 public class DownloaderSettings

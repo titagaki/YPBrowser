@@ -57,9 +57,7 @@ YP への負荷は選択肢の下限（60 秒）だけで抑える形にした�
 |---|---|
 | `Display.NewChannelColor` | 差分の色は `ChannelDiffToColorConverter` の固定値 |
 | `Notifications.BalloonTimeoutSeconds` | 参照箇所が無い（トーストの表示時間は OS 任せ） |
-| `Behavior.ActiveFilterIndex` | ビュー選択と接続されておらず、保存も復元もされない |
 | `Notifications.SoundEnabled` / `SoundFile` | 参照箇所が無い。通知音はタグごとの `SoundPath` が使われる |
-| `Window.X` / `Y` | 保存も復元もされない |
 
 ### 仮説（未確認）
 
@@ -75,11 +73,21 @@ YP への負荷は選択肢の下限（60 秒）だけで抑える形にした�
 | `Display.FavoriteNameColor` | 行の色はタグ側の `BackColor` / `TextColor` で決まるので二重 |
 | `Display.FontFamily` / `FontSize` | 未適用。変えたい要望が出た時点で作り直す |
 | `Display.BackgroundColor` / `TextColor` / `SelectedColor` | 未適用。UI にも出ていなかった |
+| `Behavior.ActiveFilterIndex` | ビューは起動時つねに「すべて」でよい。復元しない |
+
+### 実装したもの（2026-08-16）
+
+| 設定 | 内容 |
+|---|---|
+| `Window.X` / `Y` | 前回の位置を復元する。画面外なら OS の既定位置に任せる |
+
+実装の途中で、**終了時の保存自体が働いていない**ことが分かった。
+`Closing` が `await` を待たずに閉じるため、プロセスが先に落ちて書き込みが間に合わない。
+`Window.Width` / `Height` / `SplitterPosition` も同じ理由で保存されないことがあった。
+一度 `e.Cancel = true` で止めてから保存する形に直した。
 
 `Notifications.SoundEnabled` / `SoundFile` はタグごとの `SoundPath` と二重で、
 `FavoriteNameColor` と同じ構図。同じ理由で消せる見込み。
-`Behavior.ActiveFilterIndex` と `Window.X` / `Y` は「前回の状態を復元する」もので、
-消すより実装する側だと思われる。
 
 ---
 

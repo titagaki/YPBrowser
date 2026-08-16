@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using YPBrowser.Abstractions;
+using YPBrowser.Helpers;
 using YPBrowser.Settings;
 using YPBrowser.ViewModels;
 
@@ -20,6 +21,9 @@ public partial class MainWindow : Window
     /// 「起動時の状態」で最小化を選んだ人が、狙っていないトレイ格納に化けるのを防ぐ。
     /// </summary>
     private bool _startupComplete;
+
+    /// <summary>終了時の保存が済んだか。閉じるのを一度止めて保存するので、二重に走らせない。</summary>
+    private bool _saved;
 
     public MainWindow(
         MainViewModel viewModel,
@@ -64,6 +68,24 @@ public partial class MainWindow : Window
         }
         if (ws.SplitterPosition > 0)
             DetailRow.Height = new GridLength(ws.SplitterPosition);
+
+        RestorePosition(ws);
+    }
+
+    /// <summary>
+    /// 前回の位置に戻す。画面の外に出てしまう位置なら戻さず、OS の既定の位置に任せる。
+    /// </summary>
+    private void RestorePosition(WindowSettings ws)
+    {
+        if (ws.X is not { } x || ws.Y is not { } y) return;
+
+        if (!WindowPlacement.IsOnScreen(
+                new Rect(x, y, Width, Height), WindowPlacement.CurrentVirtualScreen()))
+            return;
+
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        Left = x;
+        Top = y;
     }
 
     /// <summary>起動処理が終わったことを知らせる。以降の最小化は設定どおりに扱う。</summary>
@@ -103,11 +125,21 @@ public partial class MainWindow : Window
     /// <summary>
     /// 閉じるボタンは常に終了。トレイに逃がす設定は持たない
     /// （最小化と閉じるの両方に格納があると、どちらで消えたのか分からなくなる）。
+    ///
+    /// 保存が終わるまで閉じるのを一度止める。`Closing` は待ってくれないので、
+    /// そのまま await するとプロセスが先に落ちて書き込みが間に合わない。
     /// </summary>
     private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
     {
+        if (_saved) return;
+
+        e.Cancel = true;
+
         SaveWindowMetrics();
         await _settings.SaveAsync();
+
+        _saved = true;
+        Close();
     }
 
     /// <summary>
@@ -119,6 +151,7 @@ public partial class MainWindow : Window
     {
         SaveWindowMetrics();
         await _settings.SaveAsync();
+        _saved = true;
 
         // プロセスが消えるまでアイコンが残らないように、先に自分で消す
         (_tray as IDisposable)?.Dispose();
@@ -128,12 +161,17 @@ public partial class MainWindow : Window
 
     private void SaveWindowMetrics()
     {
-        // トレイに格納中は ActualWidth が 0 になるので、その場合は前回の値を残す
-        if (ActualWidth <= 0) return;
+        // RestoreBounds は「元に戻した状態」の位置と大きさ。最大化・最小化中でも
+        // 通常時の値が取れるので、次に開いたとき元の場所へ戻せる。
+        // 一度も表示していない（トレイに格納したまま終了した）ときは空になるので前回の値を残す
+        var bounds = RestoreBounds;
+        if (bounds.IsEmpty || bounds.Width <= 0) return;
 
         var ws = _settings.Current.Window;
-        ws.Width = ActualWidth;
-        ws.Height = ActualHeight;
+        ws.Width = bounds.Width;
+        ws.Height = bounds.Height;
+        ws.X = bounds.X;
+        ws.Y = bounds.Y;
         ws.SplitterPosition = DetailRow.Height.Value;
     }
 
