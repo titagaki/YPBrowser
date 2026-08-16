@@ -7,8 +7,9 @@ PeerCast Yellow Pages ブラウザ。
 ```
 src/YPBrowser/          # メインアプリ (WPF, net9.0-windows10.0.19041.0)
 tests/YPBrowser.Tests/  # xUnit テスト (net9.0)
-_ref/pcypLite/          # 参照元 Delphi ソース (gitignore済み)
 ```
+
+仕様は自分たちで決める。他アプリの真似をする前提では書かない。
 
 ## ビルド・テスト
 

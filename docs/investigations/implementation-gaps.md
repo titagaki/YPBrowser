@@ -70,7 +70,7 @@ foreach (var serverSettings in servers.Where(s => s.Enabled))
 
 ### 仮説（未確認）
 
-`pcypLite` の設定項目を先に移植し、適用側の実装が追いついていない。
+設定項目だけが先に増え、適用側の実装が追いついていない。
 UI から消すか、実装するかの判断が必要。
 
 ---
