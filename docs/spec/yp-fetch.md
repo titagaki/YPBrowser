@@ -128,7 +128,7 @@
 ```
 Start()
   └─ 即座に 1 回取得
-       └─ ループ: max(30, BehaviorSettings.RefreshIntervalSeconds) 秒待機 → 取得
+       └─ ループ: max(60, BehaviorSettings.RefreshIntervalSeconds) 秒待機 → 取得
 ```
 
 1 回の取得（`DoRefreshAsync`）の手順:
@@ -139,20 +139,18 @@ Start()
 4. 全 YP のチャンネルを 1 つのリストに連結
 5. `IsRefreshing = false`、`RefreshCompleted` イベント発火（取得できた分だけを渡す）
 
-`RefreshNowAsync()`（手動更新）は最小フェッチ間隔ガードを無視して即座に取得する。
+`RefreshNowAsync()`（手動更新）は待機を挟まず、同じ手順をその場で 1 回実行する。
 
-### 最小フェッチ間隔ガード
+### YP へのアクセス間隔
 
-自動更新時のみ、前回取得から 4 分未満の YP をスキップする判定を持つ。
+**各 YP への実 HTTP 間隔は、ユーザーが設定した更新間隔と一致する。** 取得側での間引きはしない。
 
-```csharp
-if (!force && DateTime.Now - server.LastUpdateTime < 4分 && server.LastUpdateTime != DateTime.MinValue)
-    continue;
-```
+YP への負荷は、設定画面が選ばせる値の下限だけで抑える。
+選択肢は `SettingsMigration.RefreshIntervalPresets`（60 / 120 / 300 秒 / 更新しない）で、
+最短の正の値が `MinRefreshIntervalSeconds` としてループの下限にもなる。
+設定ファイルを手で書き換えても、起動時に `RoundRefreshInterval` が最も近いプリセットへ丸める。
 
-**現状の実装では、このガードは発動しない。** 判定に使う `YpServerItem` は `DoRefreshAsync` 内で
-毎回 `YpServerSettings` から新規生成されるため、`LastUpdateTime` は常に `DateTime.MinValue` になる。
-結果として、実際のフェッチ間隔は `RefreshIntervalSeconds`（既定 60 秒、下限 30 秒）と等しい。
+理由は [design/decisions.md](../design/decisions.md#なぜ更新間隔を設定値どおりにしたか)。
 
 ### 通知される内容
 

@@ -40,13 +40,22 @@ public partial class GeneralPageViewModel : ObservableObject
 
     /// <summary>
     /// 秒数を自由に入れられると、極端に短い値で YP に負荷をかける事故が起きる。
-    /// 選べるのはここに並べた値だけ。
+    /// 選べるのはここに並べた値だけ。取得側は間引かないので、ここが実アクセス間隔になる。
     /// </summary>
     public IReadOnlyList<SettingOption<int>> RefreshIntervalOptions { get; } =
     [
         .. SettingsMigration.RefreshIntervalPresets.Select(
-            seconds => new SettingOption<int>(seconds, seconds > 0 ? $"{seconds} 秒ごと" : "更新しない")),
+            seconds => new SettingOption<int>(seconds, FormatInterval(seconds))),
     ];
+
+    /// <summary>60 秒以上は「分」で見せる。"300 秒ごと" は間隔の見当が付きにくいため。</summary>
+    private static string FormatInterval(int seconds) => seconds switch
+    {
+        <= 0 => "更新しない",
+        < 60 => $"{seconds} 秒ごと",
+        _ when seconds % 60 == 0 => $"{seconds / 60} 分ごと",
+        _ => $"{seconds / 60} 分 {seconds % 60} 秒ごと",
+    };
 
     /// <summary>外部プレイヤー。設定ダイアログ全体と同じ実体を見る。</summary>
     public ObservableCollection<PlayerSettings> Players { get; }

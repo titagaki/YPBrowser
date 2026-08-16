@@ -13,8 +13,16 @@ public static class SettingsMigration
     /// <summary>
     /// 設定画面が選ばせる自動更新間隔（秒）。<c>0</c> は「更新しない」。
     /// 並び順がそのまま UI の並び順になる。
+    /// YP への負荷はここの下限だけで抑える（取得側で間引かない）。
     /// </summary>
-    public static readonly int[] RefreshIntervalPresets = [60, 30, 120, 0];
+    public static readonly int[] RefreshIntervalPresets = [60, 120, 300, 0];
+
+    /// <summary>
+    /// 自動更新する場合の最短間隔（秒）。プリセットから導出するので、
+    /// <see cref="RefreshIntervalPresets"/> を変えればこちらも追従する。
+    /// </summary>
+    public static readonly int MinRefreshIntervalSeconds =
+        RefreshIntervalPresets.Where(preset => preset > 0).Min();
 
     /// <summary>
     /// 組み込みタグの存在を保証し、旧 <see cref="AppSettings.Favorites"/> をタグ + ルールへ変換し、

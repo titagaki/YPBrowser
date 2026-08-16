@@ -1,6 +1,6 @@
 # ロードマップ / タスク管理
 
-更新日: 2026-08-16（タイプごとのプレイヤーまで）
+更新日: 2026-08-16（更新間隔を設定値どおりにするまで）
 
 状態: 未着手 / 進行中 / 完了。完了したタスクは 1 行に畳んで「完了」節へ移す。
 
@@ -11,8 +11,7 @@
 
 | # | 内容 | 影響 | 参照 |
 |---|---|---|---|
-| 1 | 最小フェッチ間隔 4 分が発動しない（`YpServerItem` を毎回生成するため `LastUpdateTime` が常に既定値） | 各 YP へ既定 60 秒間隔でアクセスする | [gaps 1](investigations/implementation-gaps.md#1-最小フェッチ間隔-4-分が発動しない) |
-| 2 | YP ごとの `LastError` / `ChannelCount` がどこにも残らない・表示されない | 取得失敗をユーザーが気付けない | [gaps 1](investigations/implementation-gaps.md#1-最小フェッチ間隔-4-分が発動しない) |
+| 2 | YP ごとの `LastError` / `ChannelCount` がどこにも残らない・表示されない | 取得失敗をユーザーが気付けない | [gaps 6](investigations/implementation-gaps.md#6-yp-ごとの-lasterror--channelcount-がどこにも残らない) |
 | 3 | UI で編集できるが未適用の設定が多数（`Display.*` 全項目、`Network.ProxyUrl` / `UserAgent`、`Notifications.BalloonTimeoutSeconds` / `SoundEnabled` / `SoundFile`、`Behavior.ActiveFilterIndex`、`Window.X` / `Y`） | 設定しても何も変わらない | [gaps 2](investigations/implementation-gaps.md#2-ui-で編集できるのに反映されない設定) |
 | 6 | `TypeFilter` に不正な正規表現を入れてもエラー表示がない | 設定ミスに気付けない | [spec/yp-fetch.md](spec/yp-fetch.md#3-サーバー単位のフィルタ) |
 
@@ -46,6 +45,14 @@
 
 ## 完了
 
+- 2026-08-16 自動更新を設定値どおりの挙動にした。取得側の「4 分未満はスキップ」ガード
+  （初版から入っていたが発動していなかった）を撤去し、実アクセス間隔 = 設定した更新間隔に統一。
+  YP への負荷はプリセットの下限だけで抑える形にし、選択肢を 60 / 120 / 300 秒へ変更（30 秒は削除）。
+  旧 gap 1 はこれで解消。残った `LastError` / `ChannelCount` の問題は gap 6 へ切り出した
+- 2026-08-16 録画した FLV が単体で再生できない問題を修正。書き込み先を `IRecordingSink` として
+  切り出し、FLV はタグを解析して組み直す `FlvRecordingSink` を通すようにした
+  （ts を録画開始基準へ・再送ヘッダ除去・onMetaData 差し替え）。FLV 以外は従来どおり素通し。
+  WMV(ASF) / MKV の同種の問題は未対応（[spec/recording.md](spec/recording.md#既知の制限)）
 - 2026-08-16 プレイヤーをコンテンツタイプごとの設定へ作り替え。「既定 1 つ」をやめ、
   タイプ（FLV / MKV / … / その他）1 つにつき 1 件を持つ形にした。引数の置換子を
   `{stream}` `{channelname}` `{contact}` `{genre}` `{description}` `{comment}`

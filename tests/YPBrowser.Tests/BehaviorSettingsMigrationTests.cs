@@ -74,17 +74,17 @@ public class BehaviorSettingsMigrationTests
 
     [Theory]
     [InlineData(60, 60)]
-    [InlineData(30, 30)]
     [InlineData(120, 120)]
+    [InlineData(300, 300)]
     [InlineData(0, 0)]
     [InlineData(-5, 0)]
-    [InlineData(1, 30)]
-    [InlineData(40, 30)]
-    [InlineData(50, 60)]
-    [InlineData(45, 30)]     // 等距離は短い方
+    [InlineData(1, 60)]
+    [InlineData(30, 60)]     // 選択肢から外した 30 秒は 60 秒へ
+    [InlineData(45, 60)]
     [InlineData(90, 60)]     // 等距離は短い方
     [InlineData(100, 120)]
-    [InlineData(999, 120)]
+    [InlineData(210, 120)]   // 等距離は短い方
+    [InlineData(999, 300)]
     public void RefreshInterval_IsRoundedToNearestPreset(int stored, int expected)
     {
         Assert.Equal(expected, SettingsMigration.RoundRefreshInterval(stored));
@@ -99,7 +99,16 @@ public class BehaviorSettingsMigrationTests
     [Fact]
     public void PresetValues_AreOfferedInTheDocumentedOrder()
     {
-        Assert.Equal([60, 30, 120, 0], SettingsMigration.RefreshIntervalPresets);
+        Assert.Equal([60, 120, 300, 0], SettingsMigration.RefreshIntervalPresets);
+    }
+
+    /// <summary>
+    /// 取得側で間引くのをやめたので、この下限がそのまま YP への実アクセス間隔の下限になる。
+    /// </summary>
+    [Fact]
+    public void MinRefreshInterval_IsTheShortestPositivePreset()
+    {
+        Assert.Equal(60, SettingsMigration.MinRefreshIntervalSeconds);
     }
 
     [Fact]
@@ -137,6 +146,6 @@ public class BehaviorSettingsMigrationTests
         Assert.Equal(StartupWindowState.Minimized, settings.Behavior.StartupState);
         Assert.Equal(MinimizeButtonAction.MinimizeToTray, settings.Behavior.MinimizeButtonAction);
         Assert.False(settings.Notifications.NotifyOnFavorite);
-        Assert.Equal(30, settings.Behavior.RefreshIntervalSeconds);
+        Assert.Equal(60, settings.Behavior.RefreshIntervalSeconds);
     }
 }

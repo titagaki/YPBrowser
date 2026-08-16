@@ -8,12 +8,12 @@
 
 ---
 
-## 1. 最小フェッチ間隔 4 分が発動しない
+## 1. 最小フェッチ間隔 4 分が発動しない（解消済み・2026-08-16）
 
-### 事実（コードから確認できること）
+### 当時の事実
 
 `AutoRefreshService.DoRefreshAsync` は、判定に使う `YpServerItem` を毎回
-`YpServerSettings` から新規生成している。
+`YpServerSettings` から新規生成していた。
 
 ```csharp
 foreach (var serverSettings in servers.Where(s => s.Enabled))
@@ -31,23 +31,20 @@ foreach (var serverSettings in servers.Where(s => s.Enabled))
 `YpFetchService.FetchAsync` は取得成功時に `server.LastUpdateTime` を更新するが、
 その `server` はこのループを抜けた時点で破棄される。
 
-結果として、実際のフェッチ間隔は `BehaviorSettings.RefreshIntervalSeconds`（既定 60 秒・下限 30 秒）と等しい。
+### 現状
 
-### 仮説（未確認）
+ガードを撤去して解消。実アクセス間隔 = ユーザーが設定した更新間隔になり、
+YP への負荷は選択肢の下限（60 秒）だけで抑える形にした。
 
-- YP サーバーごとの状態（`LastUpdateTime` / `LastError` / `ChannelCount`）を保持する意図だったが、
-  設定 (`YpServerSettings`) と実行時状態 (`YpServerItem`) の橋渡しが実装されていない
-- `LastError` / `ChannelCount` も同じ理由でどこにも表示されていない
+ガードを「直して生かす」のではなく撤去したのは、生かすと別の不具合を生むため。
+スキップした YP はチャンネルを 1 件も返さないので、`ChannelDiffService` が
+「その YP のチャンネルが全部消えた」と判断してログ送りにしてしまう。
+経緯は [design/decisions.md](../design/decisions.md#なぜ更新間隔を設定値どおりにしたか)。
 
-### 影響（未検証）
+### 積み残し
 
-既定設定で各 YP に 60 秒ごとにアクセスする。4 分に 1 回という当初の意図
-（[design/decisions.md](../design/decisions.md#なぜ最小フェッチ間隔を-4-分にしたか)）より高頻度。
-
-### 確認すべきこと
-
-- 実際に 60 秒間隔で HTTP リクエストが飛んでいるか（ログまたはパケットで確認）
-- `YpServerItem` を Singleton なコレクションとして保持する修正で解決するか
+`YpServerItem` を毎回作り直す構造そのものは変えていない。
+`LastError` / `ChannelCount` が残らない問題（本ページ 6）はこれが原因のまま。
 
 ---
 
@@ -118,3 +115,47 @@ UI から消すか、実装するかの判断が必要。
 | `AutoRefreshService` が YP ごとの `LastUpdateTime` を保持する | 保持していない（本ページ 1） |
 | `RefreshNowAsync(force: true)` という呼び出し | 引数なし `RefreshNowAsync()`。常に force 相当 |
 | `ActiveFilterIndex` で前回のフィルタが復元される | 復元されない（本ページ 2） |
+
+---
+
+## 6. YP ごとの `LastError` / `ChannelCount` がどこにも残らない
+
+作成日: 2026-08-16 / 状態: **未検証（コード読解のみ）**
+
+もとは本ページ 1 の一部だった。1 のガードは撤去したが、原因である
+「実行時状態の置き場が無い」構造は残っているので、こちらへ切り出す。
+
+### 事実（コードから確認できること）
+
+`YpServerItem` は 3 つの実行時状態を持ち、`YpFetchService.FetchAsync` はそこへ書き込む。
+
+```csharp
+server.LastUpdateTime = DateTime.Now;
+server.LastError = null;
+server.ChannelCount = channels.Count;
+// catch 節では server.LastError = ex.Message;
+```
+
+しかし書き込み先の `YpServerItem` は `DoRefreshAsync` のループ内で毎回 `new` されるため、
+ループを抜けた時点で破棄される。UI から参照している箇所も無い。
+
+取得に失敗した YP は空リストを返すだけで、`RefreshCompletedEventArgs` は
+チャンネル一覧しか運ばない。ステータスバーにも YP 別の状態を出す場所が無い。
+
+### 影響（未検証）
+
+- YP が落ちても、一覧からその YP のチャンネルが静かに消えるだけ。
+  「人が少ない」のか「YP が死んでいる」のか区別できない
+- 手がかりは `LogWarning` だけで、UI には出ない
+
+### 付随して気付いた点
+
+タイムアウトは `OperationCanceledException` として飛ぶため、
+`LastError` を設定しない側の `catch` に落ちる（`LogDebug` で "Fetch cancelled" と出るだけ）。
+状態を保持するようにしても、キャンセルとタイムアウトの切り分けは別途必要。
+
+### 確認すべきこと
+
+- `YpServerItem` を寿命の長いコレクションとして持つ修正で解決するか
+- 表示先をステータスバー・`RefreshCompletedEventArgs`・設定の YP 一覧のどれにするか
+  （設定の YP 一覧なら [roadmap](../roadmap.md) の S1 と一緒にやるのが自然）

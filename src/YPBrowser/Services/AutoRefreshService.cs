@@ -1,19 +1,16 @@
-using Microsoft.Extensions.Logging;
 using YPBrowser.Abstractions;
+using YPBrowser.Helpers;
 using YPBrowser.Models;
 
 namespace YPBrowser.Services;
 
 public class AutoRefreshService : IAutoRefreshService, IDisposable
 {
-    private static readonly TimeSpan MinFetchInterval = TimeSpan.FromMinutes(4);
-
     /// <summary>「更新しない」のときに設定の変更へ気付くための見張り間隔。</summary>
     private static readonly TimeSpan IdlePollInterval = TimeSpan.FromSeconds(5);
 
     private readonly IYpFetchService _fetchService;
     private readonly ISettingsService _settings;
-    private readonly ILogger<AutoRefreshService> _logger;
     private CancellationTokenSource _cts = new();
     private Task? _timerTask;
     private bool _disposed;
@@ -24,14 +21,10 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
     public bool IsRefreshing { get; private set; }
     public DateTime NextRefreshAt { get; private set; } = DateTime.Now;
 
-    public AutoRefreshService(
-        IYpFetchService fetchService,
-        ISettingsService settings,
-        ILogger<AutoRefreshService> logger)
+    public AutoRefreshService(IYpFetchService fetchService, ISettingsService settings)
     {
         _fetchService = fetchService;
         _settings = settings;
-        _logger = logger;
     }
 
     public void Start()
@@ -47,7 +40,7 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
         _timerTask = null;
     }
 
-    public Task RefreshNowAsync() => DoRefreshAsync(CancellationToken.None, force: true);
+    public Task RefreshNowAsync() => DoRefreshAsync(CancellationToken.None);
 
     private async Task RunLoopAsync(CancellationToken ct)
     {
@@ -73,7 +66,7 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
                 continue;
             }
 
-            var intervalSec = Math.Max(30, configured);
+            var intervalSec = Math.Max(SettingsMigration.MinRefreshIntervalSeconds, configured);
             NextRefreshAt = DateTime.Now.AddSeconds(intervalSec);
             try
             {
@@ -87,7 +80,11 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
         }
     }
 
-    private async Task DoRefreshAsync(CancellationToken ct, bool force = false)
+    /// <summary>
+    /// 有効な YP を設定順に取得する。取得側では間引かない
+    /// （実アクセス間隔 = ユーザーが設定した更新間隔。負荷対策はプリセットの下限で行う）。
+    /// </summary>
+    private async Task DoRefreshAsync(CancellationToken ct)
     {
         if (IsRefreshing) return;
         IsRefreshing = true;
@@ -109,15 +106,6 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
                 BitrateMax = serverSettings.BitrateMax,
                 TypeFilter = serverSettings.TypeFilter,
             };
-
-            // Minimum interval guard (skipped for manual refresh)
-            if (!force &&
-                DateTime.Now - server.LastUpdateTime < MinFetchInterval &&
-                server.LastUpdateTime != DateTime.MinValue)
-            {
-                _logger.LogDebug("Skipping {Name} - too soon since last fetch", server.Name);
-                continue;
-            }
 
             var channels = await _fetchService.FetchAsync(server, network, ct);
             allChannels.AddRange(channels);
