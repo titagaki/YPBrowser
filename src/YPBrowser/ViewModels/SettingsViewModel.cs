@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using YPBrowser.Abstractions;
 using YPBrowser.Models;
 using YPBrowser.Settings;
+using YPBrowser.ViewModels.SettingsPages;
 
 namespace YPBrowser.ViewModels;
 
@@ -14,59 +15,47 @@ namespace YPBrowser.ViewModels;
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsService _settings;
+    private readonly IYpServerStateService _serverStates;
 
     /// <summary>編集中の複製。ページはここから値を読み書きする。</summary>
     public SettingsDraft Draft { get; }
 
-    public ObservableCollection<YpServerSettings> YpServers { get; } = [];
+    /// <summary>YP 一覧。設定だけでなく取得の状況も出すので、行 VM を挟む。</summary>
+    public ObservableCollection<YpServerRow> YpServers { get; } = [];
     public ObservableCollection<PlayerSettings> Players { get; } = [];
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelectedYpServer))]
-    private YpServerSettings? _selectedYpServer;
-    public bool HasSelectedYpServer => SelectedYpServer != null;
 
     public AutoDownloadViewModel AutoDownload { get; }
 
-    public SettingsViewModel(ISettingsService settings)
+    public SettingsViewModel(ISettingsService settings, IYpServerStateService serverStates)
     {
         _settings = settings;
+        _serverStates = serverStates;
         Draft = SettingsDraft.From(settings.Current);
         AutoDownload = new AutoDownloadViewModel(Draft);
 
-        foreach (var s in Draft.YpServers) YpServers.Add(s);
+        foreach (var s in Draft.YpServers) YpServers.Add(new YpServerRow(s, serverStates));
         foreach (var p in Draft.Players) Players.Add(p);
     }
 
-    [RelayCommand]
-    private void AddYpServer()
+    public YpServerRow AddYpServer(YpServerSettings server)
     {
-        var s = new YpServerSettings { Name = "新しいYP", Url = "http://", Enabled = true };
-        YpServers.Add(s);
-        SelectedYpServer = s;
+        var row = new YpServerRow(server, _serverStates);
+        YpServers.Add(row);
+        return row;
     }
 
-    [RelayCommand]
-    private void RemoveYpServer()
-    {
-        if (SelectedYpServer != null)
-            YpServers.Remove(SelectedYpServer);
-    }
+    public void RemoveYpServer(YpServerRow row) => YpServers.Remove(row);
 
-    [RelayCommand]
-    private void MoveYpServerUp()
+    /// <summary>取得は設定順なので、並べ替えは「どれを先に見に行くか」の指定になる。</summary>
+    public void MoveYpServer(YpServerRow row, int offset)
     {
-        if (SelectedYpServer == null) return;
-        var idx = YpServers.IndexOf(SelectedYpServer);
-        if (idx > 0) YpServers.Move(idx, idx - 1);
-    }
+        var from = YpServers.IndexOf(row);
+        if (from < 0) return;
 
-    [RelayCommand]
-    private void MoveYpServerDown()
-    {
-        if (SelectedYpServer == null) return;
-        var idx = YpServers.IndexOf(SelectedYpServer);
-        if (idx < YpServers.Count - 1) YpServers.Move(idx, idx + 1);
+        var to = from + offset;
+        if (to < 0 || to >= YpServers.Count) return;
+
+        YpServers.Move(from, to);
     }
 
     /// <summary>タイプの並び順（「その他」は末尾）を保ったまま差し込む。</summary>
@@ -99,7 +88,7 @@ public partial class SettingsViewModel : ObservableObject
     /// <summary>「OK」で呼ぶ。複製を本体へ書き戻して保存する。</summary>
     public async Task ApplyAsync()
     {
-        Draft.YpServers = [.. YpServers];
+        Draft.YpServers = [.. YpServers.Select(row => row.Settings)];
         Draft.Players = [.. Players];
         AutoDownload.Flush();
 

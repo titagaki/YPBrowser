@@ -118,16 +118,14 @@ UI から消すか、実装するかの判断が必要。
 
 ---
 
-## 6. YP ごとの `LastError` / `ChannelCount` がどこにも残らない
+## 6. YP ごとの `LastError` / `ChannelCount` がどこにも残らない（解消済み・2026-08-16）
 
-作成日: 2026-08-16 / 状態: **未検証（コード読解のみ）**
+もとは本ページ 1 の一部だった。1 のガードを撤去した時点では、原因である
+「実行時状態の置き場が無い」構造が残っていたので、いったんこちらへ切り出した。
 
-もとは本ページ 1 の一部だった。1 のガードは撤去したが、原因である
-「実行時状態の置き場が無い」構造は残っているので、こちらへ切り出す。
+### 当時の事実
 
-### 事実（コードから確認できること）
-
-`YpServerItem` は 3 つの実行時状態を持ち、`YpFetchService.FetchAsync` はそこへ書き込む。
+`YpServerItem` は 3 つの実行時状態を持ち、`YpFetchService.FetchAsync` はそこへ書き込んでいた。
 
 ```csharp
 server.LastUpdateTime = DateTime.Now;
@@ -137,25 +135,21 @@ server.ChannelCount = channels.Count;
 ```
 
 しかし書き込み先の `YpServerItem` は `DoRefreshAsync` のループ内で毎回 `new` されるため、
-ループを抜けた時点で破棄される。UI から参照している箇所も無い。
+ループを抜けた時点で破棄されていた。UI から参照している箇所も無かった。
 
-取得に失敗した YP は空リストを返すだけで、`RefreshCompletedEventArgs` は
-チャンネル一覧しか運ばない。ステータスバーにも YP 別の状態を出す場所が無い。
+さらにタイムアウトは `OperationCanceledException` として飛ぶため、
+`LastError` を設定しない側の `catch` に落ちていた（`LogDebug` が出るだけ）。
+一番起きやすい失敗が、一番記録に残らない状態だった。
 
-### 影響（未検証）
+### 現状
 
-- YP が落ちても、一覧からその YP のチャンネルが静かに消えるだけ。
-  「人が少ない」のか「YP が死んでいる」のか区別できない
-- 手がかりは `LogWarning` だけで、UI には出ない
+`IYpServerStateService` を置き場として追加し、`AutoRefreshService` はそこから
+`YpServerItem` を引くようにした（URL + ホストで引くので改名では失われない）。
+タイムアウトは呼び出し側のキャンセルと別の `catch` で拾い、理由を `LastError` に残す。
 
-### 付随して気付いた点
+表示は設定の Yellow Pages ページ。カード行の 3 段目に
+「21:32:05 更新 ・ 63 件」「取得できません: ...」を出す。
 
-タイムアウトは `OperationCanceledException` として飛ぶため、
-`LastError` を設定しない側の `catch` に落ちる（`LogDebug` で "Fetch cancelled" と出るだけ）。
-状態を保持するようにしても、キャンセルとタイムアウトの切り分けは別途必要。
-
-### 確認すべきこと
-
-- `YpServerItem` を寿命の長いコレクションとして持つ修正で解決するか
-- 表示先をステータスバー・`RefreshCompletedEventArgs`・設定の YP 一覧のどれにするか
-  （設定の YP 一覧なら [roadmap](../roadmap.md) の S1 と一緒にやるのが自然）
+実機で確認済み。3 つの既定 YP について、実際の取得時刻と件数が出ることを画面で確かめた。
+失敗時の赤字表示は、同じブラシを使う `YpServerEditDialog` の検証エラーで確認している
+（YP を落として出す確認まではしていない）。

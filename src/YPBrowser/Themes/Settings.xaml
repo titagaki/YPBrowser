@@ -22,6 +22,7 @@
     <SolidColorBrush x:Key="Set.NavSelectedForeground" Color="#FF003E73" />
     <SolidColorBrush x:Key="Set.BadgeBackground" Color="#FFEFF6FC" />
     <SolidColorBrush x:Key="Set.BadgeForeground" Color="#FF003E73" />
+    <SolidColorBrush x:Key="Set.StatusError" Color="#FFC42B1C" />
 
     <!-- Windows 11 のアイコン。無い環境では MDL2 へ落ちる -->
     <FontFamily x:Key="Set.IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
@@ -84,6 +85,10 @@
                                            Text="{TemplateBinding Description}" FontSize="11"
                                            Foreground="{StaticResource Ctl.ForegroundMuted}"
                                            TextTrimming="CharacterEllipsis" />
+                                <TextBlock x:Name="Status" Margin="0,2,0,0"
+                                           Text="{TemplateBinding Status}" FontSize="11"
+                                           Foreground="{StaticResource Ctl.ForegroundMuted}"
+                                           TextTrimming="CharacterEllipsis" />
                             </StackPanel>
 
                             <ContentPresenter Grid.Column="2"
@@ -101,6 +106,16 @@
                         </Trigger>
                         <Trigger Property="IsDescriptionMonospace" Value="True">
                             <Setter TargetName="Description" Property="FontFamily" Value="Consolas, Cascadia Mono" />
+                        </Trigger>
+
+                        <Trigger Property="Status" Value="">
+                            <Setter TargetName="Status" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Status" Value="{x:Null}">
+                            <Setter TargetName="Status" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsStatusError" Value="True">
+                            <Setter TargetName="Status" Property="Foreground" Value="{StaticResource Set.StatusError}" />
                         </Trigger>
 
                         <Trigger Property="Badge" Value="">

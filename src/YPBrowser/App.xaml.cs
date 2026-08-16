@@ -68,7 +68,9 @@ public partial class App : Application
         // HttpClient
         services.AddHttpClient<YpFetchService>((sp, client) =>
         {
-            client.Timeout = TimeSpan.FromSeconds(10);
+            // 制限時間は取得ごとに Network.TimeoutSeconds で掛ける。ここで固定値を持つと
+            // 設定より短い側が勝ってしまい、エラーに出す秒数と実際が食い違う
+            client.Timeout = Timeout.InfiniteTimeSpan;
             client.DefaultRequestHeaders.UserAgent.ParseAdd("YPBrowser/1.0");
         });
         services.AddHttpClient("RecordService", client =>
@@ -80,6 +82,7 @@ public partial class App : Application
         // Services (registered against their interfaces)
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IYpFetchService>(sp => sp.GetRequiredService<YpFetchService>());
+        services.AddSingleton<IYpServerStateService, YpServerStateService>();
         services.AddSingleton<ITagMatchService, TagMatchService>();
         services.AddSingleton<IChannelDiffService, ChannelDiffService>();
         services.AddSingleton<IChannelFilterService, ChannelFilterService>();

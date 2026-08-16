@@ -58,6 +58,20 @@ public class SettingCard : ContentControl
         DependencyProperty.Register(nameof(IsDescriptionMonospace), typeof(bool), typeof(SettingCard),
             new PropertyMetadata(false));
 
+    /// <summary>
+    /// 説明の下に出す、実行時に変わる 1 行（最終取得時刻・件数・エラーなど）。空なら出ない。
+    /// 設定値である <see cref="Description"/> と分けているのは、
+    /// 「自分が設定した内容」と「いま起きていること」が同じ見た目だと読み分けられないため。
+    /// </summary>
+    public static readonly DependencyProperty StatusProperty =
+        DependencyProperty.Register(nameof(Status), typeof(string), typeof(SettingCard),
+            new PropertyMetadata(""));
+
+    /// <summary>状態が異常であることを示す。文字色が変わる。</summary>
+    public static readonly DependencyProperty IsStatusErrorProperty =
+        DependencyProperty.Register(nameof(IsStatusError), typeof(bool), typeof(SettingCard),
+            new PropertyMetadata(false));
+
     public static readonly DependencyProperty VariantProperty =
         DependencyProperty.Register(nameof(Variant), typeof(SettingCardVariant), typeof(SettingCard),
             new PropertyMetadata(SettingCardVariant.Card));
@@ -96,6 +110,18 @@ public class SettingCard : ContentControl
     {
         get => (bool)GetValue(IsDescriptionMonospaceProperty);
         set => SetValue(IsDescriptionMonospaceProperty, value);
+    }
+
+    public string Status
+    {
+        get => (string)GetValue(StatusProperty);
+        set => SetValue(StatusProperty, value);
+    }
+
+    public bool IsStatusError
+    {
+        get => (bool)GetValue(IsStatusErrorProperty);
+        set => SetValue(IsStatusErrorProperty, value);
     }
 
     public SettingCardVariant Variant

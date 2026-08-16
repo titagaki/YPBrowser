@@ -17,21 +17,27 @@
 |---|---|
 | メソッド | GET |
 | User-Agent | `YPBrowser/1.0`（`App.xaml.cs` でハードコード。`NetworkSettings.UserAgent` は未適用） |
-| HttpClient のタイムアウト | 10 秒（固定） |
-| 追加のキャンセル | `max(5, NetworkSettings.TimeoutSeconds)` 秒でリンク CTS をキャンセル |
+| HttpClient のタイムアウト | 無効 (`Timeout.InfiniteTimeSpan`) |
+| タイムアウト | `max(5, NetworkSettings.TimeoutSeconds)` 秒。ヘッダと本文の読み出しの両方に掛かる |
 | プロキシ | 未適用（`NetworkSettings.ProxyUrl` は読まれない） |
 
-実効タイムアウトは上記 2 つの短い方、すなわち `min(10, max(5, TimeoutSeconds))` 秒。
+`HttpClient` 側で固定値を持つと設定より短い側が勝ち、エラーに出す秒数と実際が食い違うため、
+制限時間は取得ごとのリンク CTS だけで掛ける。
 
 ### 結果と失敗時
 
 | ケース | 戻り値 | 副作用 |
 |---|---|---|
 | 成功 | パース済みチャンネル一覧 | `LastUpdateTime = 現在時刻`、`LastError = null`、`ChannelCount` 更新 |
-| キャンセル | 空リスト | なし |
+| 呼び出し側のキャンセル（アプリ終了など） | 空リスト | なし（失敗ではないので状態を変えない） |
+| タイムアウト | 空リスト | `LastError = "応答がありません（N 秒でタイムアウト）"` |
 | その他の例外（HTTP エラー含む） | 空リスト | `LastError = 例外メッセージ` |
 
 例外は呼び出し元に伝播しない。
+
+タイムアウトも `OperationCanceledException` で飛んでくるので、
+呼び出し側のキャンセル (`ct.IsCancellationRequested`) と区別する。
+区別しないと、タイムアウトがエラーとして記録されないまま消える。
 
 ## 2. index.txt のパース
 
@@ -100,7 +106,11 @@
 | 上限ビットレート | `BitrateMax > 0 && BitrateKbps > BitrateMax` で除外 | `-1` または `0`（既定は `-1`） |
 | コーデック | `TypeFilter` を正規表現（IgnoreCase）として `ChannelType` に照合し、不一致を除外 | `".*"`（既定）または空文字 |
 
-`TypeFilter` が不正な正規表現の場合、例外を握りつぶしてフィルタなしとして動作する。設定 UI にバリデーションはない。
+`TypeFilter` が不正な正規表現の場合、取得側は例外を握りつぶしてフィルタなしとして動作する。
+
+設定側では受け付けない。`YpServerEditDialog` が入力のたびに `Regex` を組み立てて検証し、
+読めなければ理由を赤字で出して OK を止める。取得側が黙って無視する以上、
+気付ける場所がここしか無いため。
 
 ## 4. チャンネルに付与される YP メタ情報
 
@@ -152,8 +162,36 @@ YP への負荷は、設定画面が選ばせる値の下限だけで抑える�
 
 理由は [design/decisions.md](../design/decisions.md#なぜ更新間隔を設定値どおりにしたか)。
 
+### YP ごとの実行時状態
+
+`IYpServerStateService` が YP 1 件につき `YpServerItem` を 1 つ持つ。
+設定 (`YpServerSettings`) は永続、こちらはアプリの寿命だけ生きる。
+
+| 項目 | 内容 |
+|---|---|
+| キー | URL + ホスト（小文字化）。改名では変わらない |
+| `LastUpdateTime` | 最後に取得できた時刻。未取得なら `DateTime.MinValue` |
+| `LastError` | 直近の失敗理由。成功したら `null` に戻す |
+| `ChannelCount` | 最後に取得できた件数（サーバー単位のフィルタ適用後） |
+
+キーを名前ではなく接続先にしているのは、改名で状態を失わせないため。
+逆に URL やホストを変えたら別の YP として「未取得」から始まる。
+
+`StatusDisplay` は設定画面の行に出す 1 行。
+
+| 状態 | 表示 |
+|---|---|
+| 未取得 | `未取得` |
+| 成功 | `21:32:05 更新 ・ 1,234 件` |
+| 失敗（成功歴なし） | `取得できません: {理由}` |
+| 失敗（成功歴あり） | `取得できません: {理由}（最終取得 21:32）` |
+| `Enabled = false` | `無効`（行側で判定。古い結果を出すと動いて見えるため） |
+
 ### 通知される内容
 
 ```csharp
 RefreshCompletedEventArgs.Channels  // 今回取得できた全 YP のチャンネル（ログは含まない）
 ```
+
+取得に失敗した YP は空リストを返すだけなので、このイベントからは失敗が分からない。
+失敗を知るには上の `IYpServerStateService` を見る。

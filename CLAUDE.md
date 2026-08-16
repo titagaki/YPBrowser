@@ -41,6 +41,7 @@ dotnet build YPBrowser.sln
 | クラス | 役割 |
 |---|---|
 | `YpFetchService` | HTTP取得 + パース |
+| `YpServerStateService` | YP ごとの実行時状態（最終取得・件数・エラー）の置き場。設定とは寿命が違う |
 | `ChannelDiffService` | 差分計算 (Up/Down/New/Log) |
 | `TagMatchService` | ルール評価 → チャンネルへタグ付与 (表示は決めない) |
 | `TagDefinition` / `Rule` | タグ (色・既定の扱い・通知) / 判定ルール (条件 → タグID) |

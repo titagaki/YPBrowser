@@ -11,6 +11,7 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
 
     private readonly IYpFetchService _fetchService;
     private readonly ISettingsService _settings;
+    private readonly IYpServerStateService _serverStates;
     private CancellationTokenSource _cts = new();
     private Task? _timerTask;
     private bool _disposed;
@@ -21,10 +22,14 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
     public bool IsRefreshing { get; private set; }
     public DateTime NextRefreshAt { get; private set; } = DateTime.Now;
 
-    public AutoRefreshService(IYpFetchService fetchService, ISettingsService settings)
+    public AutoRefreshService(
+        IYpFetchService fetchService,
+        ISettingsService settings,
+        IYpServerStateService serverStates)
     {
         _fetchService = fetchService;
         _settings = settings;
+        _serverStates = serverStates;
     }
 
     public void Start()
@@ -96,16 +101,8 @@ public class AutoRefreshService : IAutoRefreshService, IDisposable
 
         foreach (var serverSettings in servers.Where(s => s.Enabled))
         {
-            var server = new YpServerItem
-            {
-                Name = serverSettings.Name,
-                Url = serverSettings.Url,
-                Host = serverSettings.Host,
-                Enabled = serverSettings.Enabled,
-                BitrateMin = serverSettings.BitrateMin,
-                BitrateMax = serverSettings.BitrateMax,
-                TypeFilter = serverSettings.TypeFilter,
-            };
+            // 状態は使い回す。ここで作り直すと最終取得時刻・件数・エラーが毎回捨てられる
+            var server = _serverStates.GetOrAdd(serverSettings);
 
             var channels = await _fetchService.FetchAsync(server, network, ct);
             allChannels.AddRange(channels);
