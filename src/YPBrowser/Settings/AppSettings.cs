@@ -98,8 +98,10 @@ public partial class PlayerSettings : ObservableObject
 
 public class NetworkSettings
 {
-    public string ProxyUrl { get; set; } = "";
-    public string UserAgent { get; set; } = "YPBrowser/1.0";
+    /// <summary>
+    /// YP 取得の制限時間。下限 5 秒。
+    /// User-Agent はアプリが持つもので、ユーザーが指定する対象ではない（<c>App.xaml.cs</c>）。
+    /// </summary>
     public int TimeoutSeconds { get; set; } = 10;
 }
 
@@ -109,7 +111,6 @@ public class DisplaySettings
     public double FontSize { get; set; } = 13;
     public string BackgroundColor { get; set; } = "#FFFFFF";
     public string TextColor { get; set; } = "#1A1A1A";
-    public string FavoriteNameColor { get; set; } = "#0000CC";
     public string NewChannelColor { get; set; } = "#006600";
     public string SelectedColor { get; set; } = "#0078D4";
 }

@@ -11,9 +11,12 @@
 
 | # | 内容 | 影響 | 参照 |
 |---|---|---|---|
-| 3 | UI で編集できるが未適用の設定が多数（`Display.*` 全項目、`Network.ProxyUrl` / `UserAgent`、`Notifications.BalloonTimeoutSeconds` / `SoundEnabled` / `SoundFile`、`Behavior.ActiveFilterIndex`、`Window.X` / `Y`） | 設定しても何も変わらない | [gaps 2](investigations/implementation-gaps.md#2-ui-で編集できるのに反映されない設定) |
+| 3 | UI で編集できるが未適用の設定が残っている（`Display.FontFamily` / `FontSize` / `NewChannelColor` / `BackgroundColor` / `TextColor` / `SelectedColor`、`Notifications.BalloonTimeoutSeconds` / `SoundEnabled` / `SoundFile`、`Behavior.ActiveFilterIndex`、`Window.X` / `Y`） | 設定しても何も変わらない | [gaps 2](investigations/implementation-gaps.md#2-ui-で編集できるのに反映されない設定) |
 
-3 は「実装する」か「UI と設定項目から消す」かの判断が先に必要。
+3 は 1 項目ずつ「実装する」か「設定項目ごと消す」かを決める。
+2026-08-16 に `Network.ProxyUrl` / `UserAgent` / `Display.FavoriteNameColor` を削除済み。
+`Display.BackgroundColor` / `TextColor` / `SelectedColor` は UI にすら出ていないので、
+実装する意思が無ければ同様に消せる。`FontFamily` / `FontSize` は実装側かもしれず判断が別。
 
 ### 実装中に見つかったもの
 
@@ -51,6 +54,9 @@
 
 ## 完了
 
+- 2026-08-16 gap 3 の一部を削除。`Network.ProxyUrl`（使っていない）、`Network.UserAgent`
+  （アプリが名乗る値でユーザーが指定する対象ではない。`App.xaml.cs` の 1 か所に残す）、
+  `Display.FavoriteNameColor`（行の色はタグ側の `BackColor` / `TextColor` で決まるため二重）
 - 2026-08-16 YP ごとの絞り込み（ビットレート上下限・タイプの正規表現）を削除。
   タグとビューで同じことができる上、取得側の絞り込みは一覧に載る前に落とすので
   絞られたことが画面に出ず、「出てこない」ときに疑う導線が無かった。

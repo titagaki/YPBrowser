@@ -222,4 +222,5 @@ GetChannelsToAutoDownload() = channels.Where(Diff == New && rules.Any(r => Match
 | 設定 | 状況 |
 |---|---|
 | `Notifications.SoundFile` | タグごとの `SoundPath` が使われるため参照されない |
-| `Display.FavoriteNameColor` | 行の色はタグ側の設定で決まるため参照されない |
+
+`Display.FavoriteNameColor` はタグ側の色と二重だったため削除した。

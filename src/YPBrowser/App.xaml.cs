@@ -66,6 +66,7 @@ public partial class App : Application
         });
 
         // HttpClient
+        // UserAgent はアプリが名乗る値なので、設定項目にはしない（相手側の識別に使われる）
         services.AddHttpClient<YpFetchService>((sp, client) =>
         {
             // 制限時間は取得ごとに Network.TimeoutSeconds で掛ける。ここで固定値を持つと

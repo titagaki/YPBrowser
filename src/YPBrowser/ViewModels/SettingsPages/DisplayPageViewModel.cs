@@ -9,7 +9,6 @@ public partial class DisplayPageViewModel : ObservableObject
 
     [ObservableProperty] private string _fontFamily;
     [ObservableProperty] private string _fontSize;
-    [ObservableProperty] private string _favoriteNameColor;
     [ObservableProperty] private string _newChannelColor;
 
     public DisplayPageViewModel(DisplaySettings settings)
@@ -17,7 +16,6 @@ public partial class DisplayPageViewModel : ObservableObject
         _settings = settings;
         _fontFamily = settings.FontFamily;
         _fontSize = settings.FontSize.ToString();
-        _favoriteNameColor = settings.FavoriteNameColor;
         _newChannelColor = settings.NewChannelColor;
     }
 
@@ -29,6 +27,5 @@ public partial class DisplayPageViewModel : ObservableObject
             _settings.FontSize = v;
     }
 
-    partial void OnFavoriteNameColorChanged(string value) => _settings.FavoriteNameColor = value;
     partial void OnNewChannelColorChanged(string value) => _settings.NewChannelColor = value;
 }

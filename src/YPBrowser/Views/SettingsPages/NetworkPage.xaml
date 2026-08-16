@@ -8,12 +8,6 @@
         <StackPanel Margin="4">
             <TextBlock Text="ネットワーク設定" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12" />
 
-            <TextBlock Text="プロキシURL (省略可)" Margin="0,0,0,2" />
-            <TextBox Margin="0,0,0,12" Text="{Binding ProxyUrl}" />
-
-            <TextBlock Text="ユーザーエージェント" Margin="0,0,0,2" />
-            <TextBox Margin="0,0,0,12" Text="{Binding UserAgent}" />
-
             <TextBlock Text="タイムアウト（秒）" Margin="0,0,0,2" />
             <TextBox Text="{Binding TimeoutSeconds}" />
         </StackPanel>

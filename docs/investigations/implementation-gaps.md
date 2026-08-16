@@ -55,9 +55,9 @@ YP への負荷は選択肢の下限（60 秒）だけで抑える形にした�
 
 | 設定 | 状況（コード上の事実） |
 |---|---|
-| `Display.*` 全 7 項目 | 一覧の描画は XAML と `ChannelDiffToColorConverter` の固定値。設定を読む箇所が無い |
-| `Network.ProxyUrl` | 参照箇所が無い |
-| `Network.UserAgent` | `App.xaml.cs` に同じ文字列がハードコードされている |
+| `Display.FontFamily` / `FontSize` | 一覧の描画は XAML の固定値。設定を読む箇所が無い |
+| `Display.NewChannelColor` | 差分の色は `ChannelDiffToColorConverter` の固定値 |
+| `Display.BackgroundColor` / `TextColor` / `SelectedColor` | 参照箇所が無い。UI にも出ていない |
 | `Notifications.BalloonTimeoutSeconds` | 参照箇所が無い（トーストの表示時間は OS 任せ） |
 | `Behavior.ActiveFilterIndex` | ビュー選択と接続されておらず、保存も復元もされない |
 | `Notifications.SoundEnabled` / `SoundFile` | 参照箇所が無い。通知音はタグごとの `SoundPath` が使われる |
@@ -67,6 +67,18 @@ YP への負荷は選択肢の下限（60 秒）だけで抑える形にした�
 
 設定項目だけが先に増え、適用側の実装が追いついていない。
 UI から消すか、実装するかの判断が必要。
+
+### 判断済みのもの（2026-08-16 に削除）
+
+| 設定 | 消した理由 |
+|---|---|
+| `Network.ProxyUrl` | 使っていない |
+| `Network.UserAgent` | アプリが名乗る値であって、ユーザーが指定する対象ではない |
+| `Display.FavoriteNameColor` | 行の色はタグ側の `BackColor` / `TextColor` で決まるので二重 |
+
+残りのうち `Display.BackgroundColor` / `TextColor` / `SelectedColor` は設定ファイルにあるだけで
+UI にも出ていないため、実装する意思が無いなら同様に消せる。
+`FontFamily` / `FontSize` は「消す」より「実装する」対象かもしれず、判断が別。
 
 ---
 

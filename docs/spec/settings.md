@@ -168,9 +168,10 @@
 
 | キー | 型 | 既定値 | 適用 | 内容 |
 |---|---|---|---|---|
-| `ProxyUrl` | string | `""` | ✘ | 未適用 |
-| `UserAgent` | string | `"YPBrowser/1.0"` | ✘ | 未適用（同じ値がコードにハードコードされている） |
 | `TimeoutSeconds` | int | `10` | ✔ | YP 取得のみ。下限 5 秒。上限は無し（`HttpClient` 側の固定タイムアウトは外した） |
+
+旧 `ProxyUrl` / `UserAgent` は削除した。User-Agent は**アプリが名乗る値**であって
+ユーザーが指定するものではないので、`App.xaml.cs` が持つ 1 か所だけに残す。
 
 ### 3.7 `Display`（`DisplaySettings`）
 
@@ -180,13 +181,14 @@
 | `FontSize` | double | `13` | ✘ |
 | `BackgroundColor` | string | `"#FFFFFF"` | ✘ |
 | `TextColor` | string | `"#1A1A1A"` | ✘ |
-| `FavoriteNameColor` | string | `"#0000CC"` | ✘ |
 | `NewChannelColor` | string | `"#006600"` | ✘ |
 | `SelectedColor` | string | `"#0078D4"` | ✘ |
 
 表示は XAML と `ChannelDiffToColorConverter` の固定値で描画される（[ui.md](ui.md#22-色)）。
-`FontFamily` / `FontSize` / `FavoriteNameColor` / `NewChannelColor` は設定ダイアログで編集・保存できるが反映されない。
-行の色はタグ側の設定で決まる（[matching.md](matching.md#5-表示への反映)）。
+`FontFamily` / `FontSize` / `NewChannelColor` は設定ダイアログで編集・保存できるが反映されない。
+
+旧 `FavoriteNameColor` は削除した。行の色はタグ側の `BackColor` / `TextColor` で決まるため
+（[matching.md](matching.md#5-表示への反映)）、同じことを 2 か所で設定させる形になっていた。
 
 ### 3.8 `Notifications`（`NotificationSettings`）
 

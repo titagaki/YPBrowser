@@ -16,10 +16,10 @@
 | 項目 | 値 |
 |---|---|
 | メソッド | GET |
-| User-Agent | `YPBrowser/1.0`（`App.xaml.cs` でハードコード。`NetworkSettings.UserAgent` は未適用） |
+| User-Agent | `YPBrowser/1.0`（`App.xaml.cs` が持つ。アプリが名乗る値なので設定項目にしない） |
 | HttpClient のタイムアウト | 無効 (`Timeout.InfiniteTimeSpan`) |
 | タイムアウト | `max(5, NetworkSettings.TimeoutSeconds)` 秒。ヘッダと本文の読み出しの両方に掛かる |
-| プロキシ | 未適用（`NetworkSettings.ProxyUrl` は読まれない） |
+| プロキシ | 使わない（設定項目も持たない） |
 
 `HttpClient` 側で固定値を持つと設定より短い側が勝ち、エラーに出す秒数と実際が食い違うため、
 制限時間は取得ごとのリンク CTS だけで掛ける。
