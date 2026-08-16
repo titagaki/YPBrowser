@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using YPBrowser.Abstractions;
+using YPBrowser.Models;
 using YPBrowser.Settings;
 
 namespace YPBrowser.ViewModels;
@@ -68,27 +69,32 @@ public partial class SettingsViewModel : ObservableObject
         if (idx < YpServers.Count - 1) YpServers.Move(idx, idx + 1);
     }
 
+    /// <summary>タイプの並び順（「その他」は末尾）を保ったまま差し込む。</summary>
     public void AddPlayer(PlayerSettings player)
     {
-        // 最初の1件は、どれも既定でないと再生できないので既定にしておく
-        if (Players.Count == 0) player.IsDefault = true;
-        Players.Add(player);
+        var key = PlayerContentTypes.SortKey(player.ContentType);
+
+        var index = 0;
+        while (index < Players.Count && PlayerContentTypes.SortKey(Players[index].ContentType) <= key)
+            index++;
+
+        Players.Insert(index, player);
     }
 
-    public void RemovePlayer(PlayerSettings player)
+    public void RemovePlayer(PlayerSettings player) => Players.Remove(player);
+
+    /// <summary>タイプを変えた後、並び順を直す。</summary>
+    public void ReorderPlayer(PlayerSettings player)
     {
-        var wasDefault = player.IsDefault;
-        Players.Remove(player);
-
-        if (wasDefault && Players.Count > 0 && !Players.Any(p => p.IsDefault))
-            SetDefaultPlayer(Players[0]);
+        if (Players.Remove(player)) AddPlayer(player);
     }
 
-    /// <summary>既定は 1 つだけ。行に付く「既定」バッジがそのまま状態を表す。</summary>
-    public void SetDefaultPlayer(PlayerSettings player)
-    {
-        foreach (var p in Players) p.IsDefault = ReferenceEquals(p, player);
-    }
+    /// <summary>
+    /// すでに他のプレイヤーが担当しているタイプ。
+    /// 1 タイプにつき 1 件だけにするため、編集ダイアログの選択肢から外す。
+    /// </summary>
+    public IReadOnlyList<string> UsedContentTypes(PlayerSettings? except) =>
+        [.. Players.Where(p => !ReferenceEquals(p, except)).Select(p => p.ContentType)];
 
     /// <summary>「OK」で呼ぶ。複製を本体へ書き戻して保存する。</summary>
     public async Task ApplyAsync()

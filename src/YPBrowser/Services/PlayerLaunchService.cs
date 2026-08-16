@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using YPBrowser.Abstractions;
 using YPBrowser.Models;
+using YPBrowser.Settings;
 
 namespace YPBrowser.Services;
 
@@ -14,12 +15,12 @@ public class PlayerLaunchService : IPlayerLaunchService
         _logger = logger;
     }
 
-    public void Launch(ChannelItem channel, PlayerItem player)
+    public void Launch(ChannelItem channel, PlayerSettings player)
     {
         try
         {
-            var args = player.ArgumentTemplate.Replace("{url}", channel.StreamUrl);
-            _logger.LogInformation("Launching {Player} with args: {Args}", player.Name, args);
+            var args = PlayerPlaceholders.Expand(player.ArgumentTemplate, channel);
+            _logger.LogInformation("Launching {Player} with args: {Args}", player.ExecutableFileName, args);
             Process.Start(new ProcessStartInfo
             {
                 FileName = player.ExecutablePath,
@@ -29,7 +30,7 @@ public class PlayerLaunchService : IPlayerLaunchService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to launch player {Player}", player.Name);
+            _logger.LogError(ex, "Failed to launch player {Player}", player.ExecutablePath);
             throw;
         }
     }

@@ -35,11 +35,12 @@
                           SelectedValue="{Binding RefreshIntervalSeconds}" />
             </ctl:SettingCard>
 
-            <TextBlock Style="{StaticResource SettingGroupTitleStyle}" Text="再生" />
+            <TextBlock Style="{StaticResource SettingGroupTitleStyle}" Text="プレイヤー" />
 
             <Border Style="{StaticResource SettingGroupStyle}">
                 <StackPanel>
-                    <ctl:SettingCard Variant="GroupHeader" Icon="&#xE768;" Title="外部プレイヤー">
+                    <ctl:SettingCard Variant="GroupHeader" Icon="&#xE768;" Title="タイプごとのプレイヤー"
+                                     Description="配信の形式に応じて、起動するプレイヤーと引数を指定します">
                         <Button Content="＋ 追加" Click="AddPlayer_Click" />
                     </ctl:SettingCard>
 
@@ -47,27 +48,15 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <ctl:SettingCard Variant="SubRow"
-                                                 Title="{Binding Name}"
-                                                 Description="{Binding ExecutablePath}"
+                                                 LeadingLabel="{Binding ContentTypeLabel}"
+                                                 Title="{Binding ExecutableFileName}"
+                                                 Description="{Binding ArgumentTemplate}"
                                                  IsDescriptionMonospace="True">
-                                    <ctl:SettingCard.Style>
-                                        <Style TargetType="{x:Type ctl:SettingCard}"
-                                               BasedOn="{StaticResource {x:Type ctl:SettingCard}}">
-                                            <Style.Triggers>
-                                                <!-- 既定はチェックボックスではなくバッジで示す -->
-                                                <DataTrigger Binding="{Binding IsDefault}" Value="True">
-                                                    <Setter Property="Badge" Value="既定" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ctl:SettingCard.Style>
-
                                     <Button Content="⋯" Style="{StaticResource CardMenuButtonStyle}"
                                             Click="PlayerMenu_Click">
                                         <Button.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Header="編集" Click="EditPlayer_Click" />
-                                                <MenuItem Header="既定にする" Click="SetDefaultPlayer_Click" />
                                                 <Separator />
                                                 <MenuItem Header="削除" Click="RemovePlayer_Click" />
                                             </ContextMenu>
@@ -81,7 +70,7 @@
             </Border>
 
             <TextBlock Style="{StaticResource SettingHintStyle}"
-                       Text="チャンネルのダブルクリックで、既定のプレイヤーが起動します。" />
+                       Text="チャンネルのダブルクリックで、そのタイプに対応するプレイヤーが起動します。対応するものが無ければ「その他」を使います。" />
 
         </StackPanel>
     </ScrollViewer>

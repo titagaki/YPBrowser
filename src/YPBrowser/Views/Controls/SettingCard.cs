@@ -40,6 +40,14 @@ public class SettingCard : ContentControl
         DependencyProperty.Register(nameof(Description), typeof(string), typeof(SettingCard),
             new PropertyMetadata(""));
 
+    /// <summary>
+    /// 見出しの手前に付く固定幅のラベル（コンテンツタイプなど）。空なら出ない。
+    /// 幅が揃うので、子行を縦に並べたときに種別だけを拾い読みできる。
+    /// </summary>
+    public static readonly DependencyProperty LeadingLabelProperty =
+        DependencyProperty.Register(nameof(LeadingLabel), typeof(string), typeof(SettingCard),
+            new PropertyMetadata(""));
+
     /// <summary>見出しの右に付く小さなラベル（「既定」など）。空なら出ない。</summary>
     public static readonly DependencyProperty BadgeProperty =
         DependencyProperty.Register(nameof(Badge), typeof(string), typeof(SettingCard),
@@ -70,6 +78,12 @@ public class SettingCard : ContentControl
     {
         get => (string)GetValue(DescriptionProperty);
         set => SetValue(DescriptionProperty, value);
+    }
+
+    public string LeadingLabel
+    {
+        get => (string)GetValue(LeadingLabelProperty);
+        set => SetValue(LeadingLabelProperty, value);
     }
 
     public string Badge

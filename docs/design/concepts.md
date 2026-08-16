@@ -103,29 +103,22 @@ GET http://localhost:7144/stream/{id}?tip=...
 
 ---
 
-## PlayerSettings vs PlayerItem
+## プレイヤーまわりの型
 
-| | `PlayerSettings` | `PlayerItem` |
+| 型 | 場所 | 役割 |
 |---|---|---|
-| 場所 | `Settings/` | `Models/` |
-| 基底クラス | POCO | `ObservableObject` |
-| 用途 | JSON 保存 | 設定 UI バインディング・プレイヤー起動時の引数 |
+| `PlayerSettings` | `Settings/` | 保存も UI バインディングも実行時もこれ 1 つ |
+| `PlayerContentTypes` | `Models/` | 選べるタイプ・「その他」の扱い・並び順 |
+| `PlayerPlaceholders` | `Models/` | 引数テンプレートで使える置換子と、その展開 |
+| `PlayerPresets` | `Models/` | 編集ダイアログの「設定例」 |
+| `PlayerSelection` | `Helpers/` | チャンネルのタイプから使うプレイヤーを選ぶ |
 
-`PlayerLaunchService.Launch()` は `PlayerItem` を受け取る。
-`MainViewModel` が `PlayerSettings` から都度 `PlayerItem` を手動で構築している。
+以前は保存用の `PlayerSettings` と実行時の `PlayerItem` に分かれていて、
+`MainViewModel` が呼ぶたびに手で詰め替えていた。項目が増えるたびに詰め替えを直す必要があり、
+分けている利点も無かったので `PlayerSettings` 1 つにまとめた。
 
-```csharp
-// MainViewModel.OpenChannel() より
-var playerModel = new PlayerItem
-{
-    Name             = defaultPlayer.Name,
-    ExecutablePath   = defaultPlayer.ExecutablePath,
-    ArgumentTemplate = defaultPlayer.ArgumentTemplate,
-};
-_playerService.Launch(channel, playerModel);
-```
-
-タグ方式の `Rule` / `TagDefinition` と違い、保存用と実行時で型が分かれたまま（手動変換）。
+置換子の一覧を `PlayerPlaceholders` に集約したのは、編集ダイアログの説明と実際の展開を
+1 か所から作るため。別々に持つと、片方だけ増えて説明と挙動がずれる。
 
 ---
 
@@ -133,10 +126,10 @@ _playerService.Launch(channel, playerModel);
 
 | | `PlayerSettings` | `DownloaderSettings` |
 |---|---|---|
-| 複数登録 | はい（リスト） | いいえ（1つだけ） |
+| 複数登録 | はい（コンテンツタイプごとに 1 件） | いいえ（1つだけ） |
 | 外部プロセス起動 | はい | **いいえ**（HttpClient で自前処理） |
 | 実行ファイルパス | あり（`ExecutablePath`） | なし |
-| 引数テンプレート | あり（`{url}` のみ） | なし |
+| 引数テンプレート | あり（`PlayerPlaceholders`） | なし |
 | 出力先 | なし | あり（`OutputDirectory`） |
 | ファイル名テンプレート | なし | あり（`FileNameTemplate`） |
 

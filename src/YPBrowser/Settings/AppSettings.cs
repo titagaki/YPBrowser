@@ -57,16 +57,46 @@ public class FavoriteSettings
 }
 
 /// <summary>
-/// 外部プレイヤー 1 件。
+/// 外部プレイヤー 1 件。コンテンツタイプ 1 つにつき 1 件を持つ。
 /// 設定画面が一覧を出したまま編集モーダルで書き換えるので、変更を一覧へ返せるように
 /// 通知を出す（他の設定クラスは通知を持たない素の入れ物のまま）。
 /// </summary>
 public partial class PlayerSettings : ObservableObject
 {
-    [ObservableProperty] private string _name = "";
-    [ObservableProperty] private string _executablePath = "";
-    [ObservableProperty] private string _argumentTemplate = "\"{url}\"";
-    [ObservableProperty] private bool _isDefault = false;
+    /// <summary>
+    /// 担当するコンテンツタイプ（<c>FLV</c> など）。空文字は「その他」で、
+    /// どのタイプにも当てはまらなかったチャンネルを引き受ける。
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ContentTypeLabel))]
+    private string _contentType = PlayerContentTypes.Fallback;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ExecutableFileName))]
+    private string _executablePath = "";
+
+    /// <summary>引数の初期値。編集ダイアログは、これのままなら「まだ触っていない」と見なす。</summary>
+    public const string DefaultArgumentTemplate = "\"{stream}\"";
+
+    /// <summary>引数。使える置換子は <see cref="PlayerPlaceholders"/>。</summary>
+    [ObservableProperty] private string _argumentTemplate = DefaultArgumentTemplate;
+
+    /// <summary>一覧の左に出すタイプ表記。</summary>
+    [JsonIgnore] public string ContentTypeLabel => PlayerContentTypes.Label(ContentType);
+
+    /// <summary>一覧の見出し。プレイヤーに名前は付けさせず、実行ファイル名をそのまま出す。</summary>
+    [JsonIgnore] public string ExecutableFileName => Path.GetFileName(ExecutablePath);
+
+    /// <summary>
+    /// 旧形式（プレイヤーごとに名前と「既定」フラグを持ち、タイプの区別が無かった頃）。
+    /// 読み込み時に <see cref="ContentType"/> 方式へ移行され、以後は書き出されない。
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Name { get; set; }
+
+    /// <summary>旧形式。移行の際、どのプレイヤーを「その他」に充てるかの判断にだけ使う。</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IsDefault { get; set; }
 }
 
 public class NetworkSettings

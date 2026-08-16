@@ -112,12 +112,40 @@
 
 ### 3.3 `Players[]`（`PlayerSettings`）
 
+コンテンツタイプ 1 つにつき 1 件。同じ `ContentType` を持つ項目は 2 つ作れない。
+
 | キー | 型 | 既定値 | 適用 | 内容 |
 |---|---|---|---|---|
-| `Name` | string | `""` | ✔ | 表示名・ログ出力名 |
+| `ContentType` | string | `""` | ✔ | 担当するタイプ。`""` は「その他」（どのタイプにも当てはまらない場合の受け皿） |
 | `ExecutablePath` | string | `""` | ✔ | 実行ファイルのパス |
-| `ArgumentTemplate` | string | `"\"{url}\""` | ✔ | 引数。`{url}` が `StreamUrl` に置換される |
-| `IsDefault` | bool | `false` | ✔ | 再生時に使うプレイヤーの選択に使う |
+| `ArgumentTemplate` | string | `"\"{stream}\""` | ✔ | 引数。置換子は下記 |
+
+指定できるタイプは `FLV` / `MKV` / `WMV` / `WMA` / `OGG` / `OGV` / `MP3` / `AAC` / `NSV` / `RAW` と「その他」
+（`PlayerContentTypes.Known`）。チャンネルの `ChannelType` との照合は大文字小文字を区別しない。
+
+#### 引数の置換子（`PlayerPlaceholders`）
+
+| 置換子 | 値 |
+|---|---|
+| `{stream}` | `StreamUrl` |
+| `{channelname}` | `ChannelName` |
+| `{contact}` | `ContactUrl` |
+| `{genre}` | `Genre` |
+| `{description}` | `Description` |
+| `{comment}` | `Comment` |
+| `{contenttype}` | `ChannelType` |
+| `{direct}` | `IsDirect` を `1` / `0` で |
+
+- 表にない語（`{foo}` など）は書かれたまま残る。プレイヤー自身が波かっこを使う記法を持つことがあり、
+  空文字に潰すと引数の数が変わってしまうため
+- `{url}` は `{stream}` の旧名。読み込み時に書き換わるが、置換自体は引き続き受け付ける
+
+#### 旧形式（名前 +「既定」フラグ）からの移行
+
+`Name` / `IsDefault` が書かれていれば旧形式。旧形式にはタイプの情報が無いため、
+**既定のプレイヤー（無ければ先頭）1 件だけ**を「その他」として引き継ぎ、残りは捨てる。
+引き継いだ引数の `{url}` は `{stream}` に書き換える。
+移行後は `Name` / `IsDefault` が保存ファイルから消える。
 
 ### 3.4 `AutoDownloadRules[]`（`AutoDownloadRuleSettings`）
 

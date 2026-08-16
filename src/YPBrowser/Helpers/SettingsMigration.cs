@@ -39,9 +39,52 @@ public static class SettingsMigration
         }
 
         if (MigrateBehavior(settings)) changed = true;
+        if (MigratePlayers(settings)) changed = true;
 
         return changed;
     }
+
+    /// <summary>
+    /// 旧プレイヤー形式（名前 +「既定」フラグ。タイプの区別なし）を、
+    /// コンテンツタイプごとの形へ移す。
+    ///
+    /// 旧形式にはタイプの情報が無く、機械的に振り分けることはできない。
+    /// 既定のプレイヤー（無ければ先頭）だけを「その他」として引き継ぎ、残りは捨てる。
+    /// 残しても、どのチャンネルからも呼ばれない行が並ぶだけになるため。
+    /// </summary>
+    private static bool MigratePlayers(AppSettings settings)
+    {
+        var legacy = settings.Players.Where(IsLegacyPlayer).ToList();
+        if (legacy.Count == 0) return false;
+
+        var players = settings.Players.Where(p => !IsLegacyPlayer(p)).ToList();
+
+        // 「その他」がすでに埋まっているなら、旧データを充てる先が無い
+        if (!players.Any(p => string.IsNullOrEmpty(p.ContentType)))
+        {
+            var kept = legacy.FirstOrDefault(p => p.IsDefault == true) ?? legacy[0];
+            kept.ContentType = PlayerContentTypes.Fallback;
+            kept.ArgumentTemplate = RewriteUrlToken(kept.ArgumentTemplate);
+            players.Add(kept);
+        }
+
+        foreach (var player in players)
+        {
+            player.Name = null;
+            player.IsDefault = null;
+        }
+
+        settings.Players = players;
+        return true;
+    }
+
+    /// <summary>旧形式の項目が設定ファイルに書かれていた = 移行対象。</summary>
+    private static bool IsLegacyPlayer(PlayerSettings player) =>
+        player.Name is not null || player.IsDefault is not null;
+
+    /// <summary>置換子 <c>{url}</c> は <c>{stream}</c> へ改名した。</summary>
+    private static string RewriteUrlToken(string template) =>
+        template.Replace("{url}", "{stream}", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// 旧「動作」ページの設定を移す。

@@ -61,6 +61,15 @@
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
                                 <StackPanel Orientation="Horizontal">
+                                    <Border x:Name="LeadingLabel" Width="46" CornerRadius="3"
+                                            Margin="0,0,10,0" Padding="0,1" VerticalAlignment="Center"
+                                            Background="{StaticResource Ctl.Background}"
+                                            BorderThickness="1"
+                                            BorderBrush="{StaticResource Set.CardBorder}">
+                                        <TextBlock Text="{TemplateBinding LeadingLabel}" FontSize="10"
+                                                   HorizontalAlignment="Center"
+                                                   Foreground="{StaticResource Ctl.ForegroundMuted}" />
+                                    </Border>
                                     <TextBlock Text="{TemplateBinding Title}"
                                                Foreground="{TemplateBinding Foreground}"
                                                TextTrimming="CharacterEllipsis" />
@@ -99,6 +108,13 @@
                         </Trigger>
                         <Trigger Property="Badge" Value="{x:Null}">
                             <Setter TargetName="Badge" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+
+                        <Trigger Property="LeadingLabel" Value="">
+                            <Setter TargetName="LeadingLabel" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="LeadingLabel" Value="{x:Null}">
+                            <Setter TargetName="LeadingLabel" Property="Visibility" Value="Collapsed" />
                         </Trigger>
 
                         <!-- 枠を描くのは外側の Border。ここは中身の並びだけ担当する -->
@@ -144,6 +160,36 @@
     <Style x:Key="SettingGroupTitleStyle" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{StaticResource Ctl.ForegroundMuted}" />
         <Setter Property="Margin" Value="0,18,0,8" />
+    </Style>
+
+    <!-- 編集モーダルの中の項目名。カード行と違い、入力欄の上に置く -->
+    <Style x:Key="SettingFieldLabelStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{StaticResource Ctl.ForegroundMuted}" />
+        <Setter Property="Margin" Value="0,0,0,3" />
+    </Style>
+
+    <!-- 置換子の一覧。押すと引数へ差し込まれるので、行全体をボタンにする -->
+    <Style x:Key="SettingTokenRowStyle" TargetType="Button">
+        <Setter Property="Padding" Value="8,3" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Stretch" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{StaticResource Set.NavSelected}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- カードの外に置く補足 -->

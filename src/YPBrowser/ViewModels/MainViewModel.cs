@@ -4,8 +4,10 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using YPBrowser.Abstractions;
+using YPBrowser.Helpers;
 using YPBrowser.Models;
 using YPBrowser.Services;
+using YPBrowser.Settings;
 
 namespace YPBrowser.ViewModels;
 
@@ -268,20 +270,16 @@ public partial class MainViewModel : ObservableObject
     private void OpenChannel(ChannelItem? channel)
     {
         if (channel == null) return;
-        var players = _settings.Current.Players;
-        var defaultPlayer = players.FirstOrDefault(p => p.IsDefault) ?? players.FirstOrDefault();
-        if (defaultPlayer == null)
+
+        // タイプに合うプレイヤーが無ければ「その他」、それも無ければ OS の既定ハンドラ
+        var player = PlayerSelection.For(_settings.Current.Players, channel.ChannelType);
+        if (player == null)
         {
             _playerService.LaunchWithDefault(channel);
             return;
         }
-        var playerModel = new PlayerItem
-        {
-            Name = defaultPlayer.Name,
-            ExecutablePath = defaultPlayer.ExecutablePath,
-            ArgumentTemplate = defaultPlayer.ArgumentTemplate,
-        };
-        _playerService.Launch(channel, playerModel);
+
+        _playerService.Launch(channel, player);
     }
 
     [RelayCommand]
@@ -402,4 +400,4 @@ public partial class MainViewModel : ObservableObject
         [.. _allChannels.Where(c => c.Diff != ChannelDiff.Log)];
 }
 
-public record OpenChannelWithArgs(ChannelItem? Channel, PlayerItem? Player);
+public record OpenChannelWithArgs(ChannelItem? Channel, PlayerSettings? Player);

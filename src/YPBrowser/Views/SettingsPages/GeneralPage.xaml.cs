@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using YPBrowser.Models;
 using YPBrowser.Settings;
 using YPBrowser.ViewModels;
 using YPBrowser.ViewModels.SettingsPages;
@@ -23,8 +24,18 @@ public partial class GeneralPage : UserControl
 
     private void AddPlayer_Click(object sender, RoutedEventArgs e)
     {
-        var player = new PlayerSettings();
-        if (ShowEditDialog(player, "プレイヤーを追加"))
+        var selectable = SelectableContentTypes(null);
+        if (selectable.Count == 0)
+        {
+            // 1 タイプにつき 1 件なので、全部埋まったら追加できるものが無い
+            MessageBox.Show(Window.GetWindow(this),
+                "すべてのタイプにプレイヤーを設定済みです。", "プレイヤーを追加",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var player = new PlayerSettings { ContentType = selectable[0] };
+        if (ShowEditDialog(player, "プレイヤーを追加", selectable))
             _owner.AddPlayer(player);
     }
 
@@ -45,21 +56,19 @@ public partial class GeneralPage : UserControl
         // 編集を中断できるように、書き戻す前の値を控えておく
         var draft = new PlayerSettings
         {
-            Name = player.Name,
+            ContentType = player.ContentType,
             ExecutablePath = player.ExecutablePath,
             ArgumentTemplate = player.ArgumentTemplate,
         };
 
-        if (!ShowEditDialog(draft, "プレイヤーを編集")) return;
+        if (!ShowEditDialog(draft, "プレイヤーを編集", SelectableContentTypes(player))) return;
 
-        player.Name = draft.Name;
+        var typeChanged = draft.ContentType != player.ContentType;
+        player.ContentType = draft.ContentType;
         player.ExecutablePath = draft.ExecutablePath;
         player.ArgumentTemplate = draft.ArgumentTemplate;
-    }
 
-    private void SetDefaultPlayer_Click(object sender, RoutedEventArgs e)
-    {
-        if (GetPlayer(sender) is { } player) _owner.SetDefaultPlayer(player);
+        if (typeChanged) _owner.ReorderPlayer(player);
     }
 
     private void RemovePlayer_Click(object sender, RoutedEventArgs e)
@@ -67,9 +76,20 @@ public partial class GeneralPage : UserControl
         if (GetPlayer(sender) is { } player) _owner.RemovePlayer(player);
     }
 
-    private bool ShowEditDialog(PlayerSettings player, string title)
+    /// <summary>まだ他のプレイヤーが担当していないタイプ。編集中の 1 件は自分の分を残す。</summary>
+    private List<string> SelectableContentTypes(PlayerSettings? editing)
     {
-        var dialog = new PlayerEditDialog(player, title) { Owner = Window.GetWindow(this) };
+        var used = _owner.UsedContentTypes(editing);
+        return [.. PlayerContentTypes.Selectable
+            .Where(type => !used.Contains(type, StringComparer.OrdinalIgnoreCase))];
+    }
+
+    private bool ShowEditDialog(PlayerSettings player, string title, IReadOnlyList<string> selectableContentTypes)
+    {
+        var dialog = new PlayerEditDialog(player, title, selectableContentTypes)
+        {
+            Owner = Window.GetWindow(this),
+        };
         return dialog.ShowDialog() == true;
     }
 

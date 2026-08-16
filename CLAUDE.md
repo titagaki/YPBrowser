@@ -31,7 +31,7 @@ dotnet build YPBrowser.sln -p:Platform=x64
 - **設定**: JSON (`%AppData%\YPBrowser\settings.json`)
 - **通知**: Windows トースト (`Windows.UI.Notifications`)
 - **トレイ**: `Shell_NotifyIcon` を直接呼ぶ (WinForms は暗黙 using が WPF と衝突するため使わない)
-- **プレイヤー**: 外部プレイヤーをURL/プレイリストで起動 (`Process.Start`)
+- **プレイヤー**: コンテンツタイプごとに外部プレイヤーを起動 (`Process.Start`)
 
 ## 主要クラス
 
@@ -42,7 +42,9 @@ dotnet build YPBrowser.sln -p:Platform=x64
 | `TagMatchService` | ルール評価 → チャンネルへタグ付与 (表示は決めない) |
 | `TagDefinition` / `Rule` | タグ (色・既定の扱い・通知) / 判定ルール (条件 → タグID) |
 | `ChannelFilterService` | ビュー + 絞り込み + 非表示件数 |
-| `SettingsMigration` | 旧 `Favorites` → タグ方式への移行 |
+| `SettingsMigration` | 旧 `Favorites` → タグ方式 / 旧プレイヤー → タイプごとへの移行 |
+| `PlayerPlaceholders` | 引数テンプレートの置換子と展開（説明と挙動の唯一の出どころ） |
+| `PlayerSelection` | チャンネルのタイプ → 使うプレイヤー（無ければ「その他」） |
 | `AutoRefreshService` | 定期更新 (PeriodicTimer) |
 | `TrayIconService` | トレイ常駐アイコン (`Shell_NotifyIcon` の P/Invoke) |
 | `MainViewModel` | UI オーケストレーター |
