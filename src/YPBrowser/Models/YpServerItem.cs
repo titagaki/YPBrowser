@@ -15,9 +15,6 @@ public partial class YpServerItem : ObservableObject
     [ObservableProperty] private string _url = "";
     [ObservableProperty] private string _host = "";
     [ObservableProperty] private bool _enabled = true;
-    [ObservableProperty] private int _bitrateMin = 0;
-    [ObservableProperty] private int _bitrateMax = -1;
-    [ObservableProperty] private string _typeFilter = ".*";
 
     // ここから下は実行時状態。設定ファイルには保存しない（再起動で消える）。
 

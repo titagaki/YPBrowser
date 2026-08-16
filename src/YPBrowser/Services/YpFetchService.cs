@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using YPBrowser.Abstractions;
 using YPBrowser.Helpers;
@@ -12,8 +11,6 @@ public class YpFetchService : IYpFetchService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<YpFetchService> _logger;
-
-    private static readonly Regex TypeFilterCache = new(".*", RegexOptions.Compiled);
 
     public YpFetchService(HttpClient httpClient, ILogger<YpFetchService> logger)
     {
@@ -79,12 +76,6 @@ public class YpFetchService : IYpFetchService
     private List<ChannelItem> ParseLines(string text, YpServerItem server)
     {
         var result = new List<ChannelItem>();
-        Regex? typeFilterRegex = null;
-        if (!string.IsNullOrWhiteSpace(server.TypeFilter) && server.TypeFilter != ".*")
-        {
-            try { typeFilterRegex = new Regex(server.TypeFilter, RegexOptions.IgnoreCase); }
-            catch { /* ignore invalid regex */ }
-        }
 
         foreach (var rawLine in text.Split('\n'))
         {
@@ -123,13 +114,6 @@ public class YpFetchService : IYpFetchService
             };
 
             if (string.IsNullOrEmpty(ch.Id)) continue;
-
-            // Bitrate filter
-            if (server.BitrateMin > 0 && ch.BitrateKbps < server.BitrateMin) continue;
-            if (server.BitrateMax > 0 && ch.BitrateKbps > server.BitrateMax) continue;
-
-            // Type filter
-            if (typeFilterRegex != null && !typeFilterRegex.IsMatch(ch.ChannelType)) continue;
 
             result.Add(ch);
         }

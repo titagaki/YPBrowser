@@ -47,9 +47,6 @@ public partial class YpServersPage : UserControl
             Url = row.Settings.Url,
             Host = row.Settings.Host,
             Enabled = row.Settings.Enabled,
-            BitrateMin = row.Settings.BitrateMin,
-            BitrateMax = row.Settings.BitrateMax,
-            TypeFilter = row.Settings.TypeFilter,
         };
 
         if (!ShowEditDialog(draft, "YP サーバーを編集")) return;
@@ -57,9 +54,6 @@ public partial class YpServersPage : UserControl
         row.Settings.Name = draft.Name;
         row.Settings.Url = draft.Url;
         row.Settings.Host = draft.Host;
-        row.Settings.BitrateMin = draft.BitrateMin;
-        row.Settings.BitrateMax = draft.BitrateMax;
-        row.Settings.TypeFilter = draft.TypeFilter;
 
         // URL やホストが変わっていれば、対応する取得状況も引き直される
         row.Refresh();

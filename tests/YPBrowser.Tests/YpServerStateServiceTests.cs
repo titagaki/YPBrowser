@@ -73,16 +73,13 @@ public class YpServerStateServiceTests
 
         var updated = service.GetOrAdd(new YpServerSettings
         {
-            Name = "テストYP",
+            Name = "名前を変えたYP",
             Url = "http://example.com/index.txt",
             Enabled = false,
-            BitrateMin = 300,
-            TypeFilter = "FLV",
         });
 
+        Assert.Equal("名前を変えたYP", updated.Name);
         Assert.False(updated.Enabled);
-        Assert.Equal(300, updated.BitrateMin);
-        Assert.Equal("FLV", updated.TypeFilter);
         Assert.Equal("接続できません", updated.LastError);
     }
 

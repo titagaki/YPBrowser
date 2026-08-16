@@ -56,8 +56,5 @@ public class YpServerStateService : IYpServerStateService
         to.Url = from.Url;
         to.Host = from.Host;
         to.Enabled = from.Enabled;
-        to.BitrateMin = from.BitrateMin;
-        to.BitrateMax = from.BitrateMax;
-        to.TypeFilter = from.TypeFilter;
     }
 }

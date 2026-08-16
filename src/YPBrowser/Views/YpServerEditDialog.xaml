@@ -22,29 +22,8 @@
         <TextBlock Style="{StaticResource SettingFieldLabelStyle}" Text="ホスト" />
         <TextBox x:Name="HostBox" Margin="0,0,0,2"
                  FontFamily="Consolas, Cascadia Mono" />
-        <TextBlock Style="{StaticResource SettingHintStyle}" Margin="0,0,0,10"
-                   Text="視聴に使う PeerCast のアドレス。空なら localhost:7144 を使います。" />
-
-        <TextBlock Style="{StaticResource SettingGroupTitleStyle}" Text="絞り込み" Margin="0,4,0,8" />
-
-        <TextBlock Style="{StaticResource SettingFieldLabelStyle}" Text="ビットレート (kbps)" />
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
-            <TextBox x:Name="BitrateMinBox" Width="80" />
-            <TextBlock Text="〜" Margin="8,0" VerticalAlignment="Center" />
-            <TextBox x:Name="BitrateMaxBox" Width="80" />
-        </StackPanel>
-        <TextBlock Style="{StaticResource SettingHintStyle}" Margin="0,0,0,10"
-                   Text="この範囲から外れるチャンネルは一覧に出しません。0 以下で制限なし。" />
-
-        <TextBlock Style="{StaticResource SettingFieldLabelStyle}" Text="タイプ" />
-        <TextBox x:Name="TypeFilterBox" Margin="0,0,0,2"
-                 FontFamily="Consolas, Cascadia Mono"
-                 TextChanged="TypeFilterBox_TextChanged" />
         <TextBlock Style="{StaticResource SettingHintStyle}"
-                   Text="正規表現。大文字小文字は区別しません。すべて通すなら .* のままにします。" />
-        <TextBlock x:Name="TypeFilterError" FontSize="11" Margin="0,2,0,0"
-                   TextWrapping="Wrap" Visibility="Collapsed"
-                   Foreground="{StaticResource Set.StatusError}" />
+                   Text="視聴に使う PeerCast のアドレス。空なら localhost:7144 を使います。" />
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
             <Button Content="OK" Click="OK_Click" Width="80" Margin="0,0,8,0" IsDefault="True" />

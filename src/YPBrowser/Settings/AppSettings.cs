@@ -36,9 +36,6 @@ public class YpServerSettings
     public string Url { get; set; } = "";
     public string Host { get; set; } = "";
     public bool Enabled { get; set; } = true;
-    public int BitrateMin { get; set; } = 0;
-    public int BitrateMax { get; set; } = -1;
-    public string TypeFilter { get; set; } = ".*";
 }
 
 /// <summary>旧形式のお気に入り1件。移行のためだけに残っている。</summary>

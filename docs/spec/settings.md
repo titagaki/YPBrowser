@@ -47,9 +47,9 @@
 | `Url` | string | `""` | ✔ | index.txt の URL |
 | `Host` | string | `""` | ✔ | ローカル PeerCast の `ホスト:ポート`。取得 URL の `?host=` と `StreamUrl` に使う。空なら `localhost:7144` |
 | `Enabled` | bool | `true` | ✔ | false の YP は取得しない |
-| `BitrateMin` | int | `0` | ✔ | 下限。`0` でフィルタなし |
-| `BitrateMax` | int | `-1` | ✔ | 上限。`0` 以下でフィルタなし |
-| `TypeFilter` | string | `".*"` | ✔ | コーデックの正規表現。`".*"`・空でフィルタなし |
+
+旧 `BitrateMin` / `BitrateMax` / `TypeFilter` は削除した。設定ファイルに残っていても読まず、
+次の保存で消える（移行は不要）。
 
 既定の YP サーバー（設定ファイルが無い場合）:
 
